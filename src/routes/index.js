@@ -4,8 +4,8 @@ import LayoutUser from "../layouts/layoutUser";
 import LoginPage from "../pages/loginPage";
 import RegisterPage from "../pages/registerPage";
 import Manager from "../pages/manager/managerDashboard";
-import LayoutAdmin from "../layouts/layoutAdmin";
-
+//import LayoutAdmin from "../layouts/layoutAdmin";
+import StaffManagement from "../pages/Staffmanager/StaffManagement";
 import "bootstrap/dist/css/bootstrap.min.css";
 import AdminDashboard from "../pages/admin/adminDashboard";
 const Routes = () => {
@@ -16,7 +16,7 @@ const Routes = () => {
     },
     {
       path: "/admin-dashboard",
-      element: <LayoutAdmin Page={AdminDashboard} />,
+      element: <AdminDashboard/>,
     },
     {
       path: "/login",
@@ -30,6 +30,10 @@ const Routes = () => {
       path: "manager-dashboard",
       element: <Manager />,
     },
+    {
+      path: "/staff-management",
+      element: <StaffManagement />,
+    }
   ]);
   return <div>{elements}</div>;
 };
