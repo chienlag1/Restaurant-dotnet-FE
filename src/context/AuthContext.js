@@ -57,6 +57,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Đăng nhập
+
   const login = async (Email, Password) => {
     try {
       const response = await axios.post(
@@ -66,13 +67,32 @@ export const AuthProvider = ({ children }) => {
           Password,
         }
       );
-      // Lưu trữ thông tin người dùng
+
+      // Lưu token vào localStorage
+      localStorage.setItem("authToken", response.data.token);
+
+      // Lưu thông tin user vào state
       setUser({
         FullName: response.data.username,
         id: response.data.userId,
         Email: response.data.email,
         token: response.data.token,
+        roleId: response.data.role, // giả sử API trả về role
       });
+
+      // Điều hướng theo role
+      if (response.data.roleId === 1) {
+        navigate("/user-dashboard");
+      } else if (response.data.roleId === 2) {
+        navigate("/admin-dashboard");
+      } else if (response.data.roleId === 3) {
+        navigate("/manager-dashboard");
+      } else if (response.data.roleId === 4) {
+        navigate("/staff-dashboard");
+      } else {
+        navigate("/");
+      }
+
       return response.data;
     } catch (error) {
       throw error.response.data;
@@ -85,7 +105,7 @@ export const AuthProvider = ({ children }) => {
     );
     if (confirmLogout) {
       setUser(null);
-      navigate("/signin");
+      navigate("/");
     }
   };
 
