@@ -1,18 +1,17 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+
 const LoginPage = () => {
   const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       await login(email, password);
-      navigate("/");
+      // Không cần điều hướng nữa, vì AuthContext đã xử lý
     } catch (error) {
       alert("Login Failed: " + error.message);
     }
