@@ -50,6 +50,7 @@ export const AuthProvider = ({ children }) => {
         "http://localhost:5112/api/auth/login",
         { Email, Password }
       );
+
       const loggedInUser = {
         FullName: data.username,
         id: data.userId,
@@ -57,19 +58,21 @@ export const AuthProvider = ({ children }) => {
         token: data.token,
         roleId: data.roleId,
       };
+
       setUser(loggedInUser);
+      localStorage.setItem("authToken", data.token); // Lưu token vào localStorage
 
       // Điều hướng dựa trên roleId
       if (loggedInUser.roleId === 1) {
-        navigate("/"); // Trang user
+        navigate("/");
       } else if (loggedInUser.roleId === 2) {
-        navigate("/admin-dashboard"); // Trang admin
+        navigate("/admin-dashboard");
       } else if (loggedInUser.roleId === 3) {
-        navigate("/manager-dashboard"); // Trang admin
+        navigate("/manager-dashboard");
       } else if (loggedInUser.roleId === 4) {
-        navigate("/staff-dashboard"); // Trang admin
+        navigate("/staff-dashboard");
       } else {
-        navigate("/"); // Trang mặc định
+        navigate("/");
       }
     } catch (error) {
       throw error.response?.data || "Login failed";
