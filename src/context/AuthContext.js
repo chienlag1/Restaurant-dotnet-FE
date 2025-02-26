@@ -1,109 +1,83 @@
-// /context/AuthContext.js
-
 import React, { createContext, useContext, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-// Tạo context cho xác thực
 const AuthContext = createContext();
 
-// Provider cho AuthContext
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
 
-  // Đăng ký người dùng mới
   const signup = async (FullName, Email, Password, roleId) => {
     try {
-      const response = await axios.post(
+      const { data } = await axios.post(
         "http://localhost:5112/api/auth/register",
-        {
-          FullName,
-          Email,
-          Password,
-          roleId,
-        }
+        { FullName, Email, Password, roleId }
       );
-      return response.data;
+      return data;
     } catch (error) {
-      throw error.response.data;
+      throw error.response?.data || "Registration failed";
     }
   };
 
-  // Xác minh mã
   const verifyCode = async (email, code) => {
     try {
-      const response = await axios.post("http://localhost:5112/users/verify", {
+      const { data } = await axios.post("http://localhost:5112/users/verify", {
         email,
         code,
       });
-      return { success: response.data };
+      return { success: data };
     } catch (error) {
-      throw error.response.data;
+      throw error.response?.data || "Verification failed";
     }
   };
 
-  // Đặt lại mật khẩu
   const resetPassword = async (email, newPassword) => {
     try {
-      const response = await axios.post(
+      const { data } = await axios.post(
         "http://localhost:5112/users/reset-password",
         { email, newPassword }
       );
-      return { success: response.data };
+      return { success: data };
     } catch (error) {
-      throw error.response.data;
+      throw error.response?.data || "Password reset failed";
     }
   };
 
-  // Đăng nhập
-
   const login = async (Email, Password) => {
     try {
-      const response = await axios.post(
+      const { data } = await axios.post(
         "http://localhost:5112/api/auth/login",
-        {
-          Email,
-          Password,
-        }
+        { Email, Password }
       );
+      const loggedInUser = {
+        FullName: data.username,
+        id: data.userId,
+        Email: data.email,
+        token: data.token,
+        roleId: data.roleId,
+      };
+      setUser(loggedInUser);
 
-      // Lưu token vào localStorage
-      localStorage.setItem("authToken", response.data.token);
-
-      // Lưu thông tin user vào state
-      setUser({
-        FullName: response.data.username,
-        id: response.data.userId,
-        Email: response.data.email,
-        token: response.data.token,
-        roleId: response.data.role, // giả sử API trả về role
-      });
-
-      // Điều hướng theo role
-      if (response.data.roleId === 1) {
-        navigate("/user-dashboard");
-      } else if (response.data.roleId === 2) {
-        navigate("/admin-dashboard");
-      } else if (response.data.roleId === 3) {
-        navigate("/manager-dashboard");
-      } else if (response.data.roleId === 4) {
-        navigate("/staff-dashboard");
+      // Điều hướng dựa trên roleId
+      if (loggedInUser.roleId === 1) {
+        navigate("/"); // Trang user
+      } else if (loggedInUser.roleId === 2) {
+        navigate("/admin-dashboard"); // Trang admin
+      } else if (loggedInUser.roleId === 3) {
+        navigate("/manager-dashboard"); // Trang admin
+      } else if (loggedInUser.roleId === 4) {
+        navigate("/staff-dashboard"); // Trang admin
       } else {
-        navigate("/");
+        navigate("/"); // Trang mặc định
       }
-
-      return response.data;
     } catch (error) {
-      throw error.response.data;
+      throw error.response?.data || "Login failed";
     }
   };
 
   const logout = () => {
-    const confirmLogout = window.confirm(
-      "Bạn có chắc chắn muốn đăng xuất không?"
-    );
-    if (confirmLogout) {
+    if (window.confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
       setUser(null);
       navigate("/");
     }
@@ -118,5 +92,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Hook để sử dụng AuthContext
 export const useAuth = () => useContext(AuthContext);

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { Modal, Button, Form } from "react-bootstrap";
 
-const AdminDashboard = () => {
+const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -10,6 +11,10 @@ const AdminDashboard = () => {
   const [filterRole, setFilterRole] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 10;
+
+  const [showModal, setShowModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -26,11 +31,9 @@ const AdminDashboard = () => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-
         setUsers(response.data.$values || []);
         setLoading(false);
       } catch (error) {
-        console.error("Lỗi khi tải danh sách người dùng:", error);
         setError("Lỗi khi tải danh sách người dùng. Vui lòng thử lại.");
         setLoading(false);
       }
@@ -53,18 +56,45 @@ const AdminDashboard = () => {
     }
   };
 
-  const getRoleId = (roleName) => {
-    switch (roleName) {
-      case "User":
-        return 1;
-      case "Admin":
-        return 2;
-      case "Manager":
-        return 3;
-      case "Staff":
-        return 4;
-      default:
-        return 0;
+  const handleResetPassword = (user) => {
+    console.log("User selected for reset:", user); // Kiểm tra dữ liệu user khi click
+    setSelectedUser(user);
+    setShowModal(true);
+  };
+
+  const handleSavePassword = async () => {
+    if (!newPassword) {
+      alert("Vui lòng nhập mật khẩu mới");
+      return;
+    }
+
+    if (!selectedUser || !selectedUser.userId) {
+      // Sử dụng userId thay vì id
+      alert("Lỗi: Không tìm thấy người dùng. Vui lòng thử lại!");
+      console.error("Lỗi: selectedUser không hợp lệ", selectedUser);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("authToken");
+      const requestData = {
+        userId: selectedUser.userId, // Sử dụng userId
+        newPassword: newPassword,
+      };
+
+      console.log("Dữ liệu gửi lên:", requestData);
+
+      await axios.post(
+        "http://localhost:5112/api/admin/reset-password",
+        requestData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      alert("Mật khẩu đã được cập nhật!");
+      setShowModal(false);
+      setNewPassword("");
+    } catch (error) {
+      alert("Lỗi khi đặt lại mật khẩu!");
     }
   };
 
@@ -80,51 +110,8 @@ const AdminDashboard = () => {
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
-
-  const handleRoleChange = async (user, selectedRole) => {
-    if (getRoleName(user.roleId) === selectedRole) return;
-
-    const userId = user.id || user.userId;
-    if (!userId) {
-      console.error("Lỗi: Không tìm thấy ID của user:", user);
-      alert("Lỗi: Không tìm thấy ID của user.");
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem("authToken");
-      const response = await axios.put(
-        `http://localhost:5112/api/admin/change-role?userId=${userId}&newRoleId=${getRoleId(
-          selectedRole
-        )}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (response.status === 200) {
-        // Cập nhật role ngay sau khi API thành công
-        setUsers((prevUsers) =>
-          prevUsers.map((u) =>
-            u.id === userId || u.userId === userId
-              ? { ...u, roleId: getRoleId(selectedRole) }
-              : u
-          )
-        );
-
-        alert(`Đã đổi role của ${user.fullName} thành ${selectedRole}`);
-      }
-    } catch (error) {
-      console.error("Lỗi khi cập nhật role:", error);
-      alert("Lỗi khi cập nhật role. Vui lòng thử lại.");
-    }
-  };
-
   return (
     <div className="container mt-4">
-      <h2 className="text-center fw-bold text-primary">Admin Dashboard</h2>
       <p className="fs-5">Danh Sách Users:</p>
 
       {loading && <p>Loading users...</p>}
@@ -161,7 +148,7 @@ const AdminDashboard = () => {
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody style={{ minHeight: "400px" }}>
+              <tbody>
                 {currentUsers.map((user, index) => (
                   <tr key={index}>
                     <td>{user.email}</td>
@@ -176,27 +163,16 @@ const AdminDashboard = () => {
                       </span>
                     </td>
                     <td>
-                      <select
-                        className="form-select"
-                        value={getRoleName(user.roleId)}
-                        disabled={user.roleId === 2}
-                        onChange={(e) => handleRoleChange(user, e.target.value)}
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => handleResetPassword(user)}
+                        disabled={user.roleId === 2} // Disable nếu role là Admin (roleId === 2)
                       >
-                        <option value="User">User</option>
-                        <option value="Admin">Admin</option>
-                        <option value="Manager">Manager</option>
-                        <option value="Staff">Staff</option>
-                      </select>
+                        Reset Password
+                      </button>
                     </td>
                   </tr>
                 ))}
-                {[...Array(usersPerPage - currentUsers.length)].map(
-                  (_, index) => (
-                    <tr key={`empty-${index}`}>
-                      <td colSpan="4">&nbsp;</td>
-                    </tr>
-                  )
-                )}
               </tbody>
             </table>
           </div>
@@ -208,7 +184,7 @@ const AdminDashboard = () => {
               >
                 <button
                   className="page-link"
-                  onClick={() => handlePageChange(currentPage - 1)}
+                  onClick={() => setCurrentPage(currentPage - 1)}
                 >
                   Previous
                 </button>
@@ -222,7 +198,7 @@ const AdminDashboard = () => {
                 >
                   <button
                     className="page-link"
-                    onClick={() => handlePageChange(index + 1)}
+                    onClick={() => setCurrentPage(index + 1)}
                   >
                     {index + 1}
                   </button>
@@ -235,7 +211,7 @@ const AdminDashboard = () => {
               >
                 <button
                   className="page-link"
-                  onClick={() => handlePageChange(currentPage + 1)}
+                  onClick={() => setCurrentPage(currentPage + 1)}
                 >
                   Next
                 </button>
@@ -244,8 +220,36 @@ const AdminDashboard = () => {
           </nav>
         </>
       )}
+
+      {/* Modal for Reset Password */}
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Reset Password</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>New Password</Form.Label>
+              <Form.Control
+                type="password"
+                placeholder="Enter new password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Close
+          </Button>
+          <Button variant="primary" onClick={handleSavePassword}>
+            Save Password
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
 
-export default AdminDashboard;
+export default UserManagement;

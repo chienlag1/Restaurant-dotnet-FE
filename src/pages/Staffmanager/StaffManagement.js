@@ -12,9 +12,15 @@ export default function StaffManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredStaffList = staffList.filter((staff) =>
+    staff.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const fetchStaff = useCallback(async () => {
     if (!token) return;
-  
     setLoading(true);
     setError(null);
     try {
@@ -35,7 +41,7 @@ export default function StaffManagement() {
       setLoading(false);
     }
   }, [token]); // Chỉ thay đổi khi token thay đổi
-  
+
   useEffect(() => {
     fetchStaff();
   }, [fetchStaff]);
@@ -53,7 +59,9 @@ export default function StaffManagement() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setSuccessMessage(editingStaff ? "Cập nhật thành công!" : "Thêm nhân viên thành công!");
+      setSuccessMessage(
+        editingStaff ? "Cập nhật thành công!" : "Thêm nhân viên thành công!"
+      );
       setTimeout(() => setSuccessMessage(""), 3000);
       reset();
       setEditingStaff(null);
@@ -71,9 +79,12 @@ export default function StaffManagement() {
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa nhân viên này?")) {
       try {
-        await axios.delete(`http://localhost:5112/api/staff/delete-staff/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await axios.delete(
+          `http://localhost:5112/api/staff/delete-staff/${id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         setSuccessMessage("Xóa nhân viên thành công!");
         setTimeout(() => setSuccessMessage(""), 3000);
         fetchStaff();
@@ -105,7 +116,10 @@ export default function StaffManagement() {
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit(onSubmit)} className="mb-8 bg-gray-50 p-6 rounded-lg">
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="mb-8 bg-gray-50 p-6 rounded-lg"
+            >
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -138,11 +152,16 @@ export default function StaffManagement() {
                     {...register("password")}
                     type="password"
                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                    placeholder={editingStaff ? "Để trống nếu không đổi mật khẩu" : "Nhập mật khẩu"}
+                    placeholder={
+                      editingStaff
+                        ? "Để trống nếu không đổi mật khẩu"
+                        : "Nhập mật khẩu"
+                    }
                     required={!editingStaff}
                   />
                 </div>
               </div>
+
               <div className="mt-4 flex justify-end">
                 {editingStaff && (
                   <button
@@ -166,6 +185,16 @@ export default function StaffManagement() {
             </form>
 
             {/* Danh sách nhân viên */}
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+              />
+            </div>
+
             {loading ? (
               <div className="flex justify-center items-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -173,14 +202,16 @@ export default function StaffManagement() {
             ) : staffList.length > 0 ? (
               <div className="bg-white rounded-lg overflow-hidden">
                 <div className="grid gap-4">
-                  {staffList.map((staff) => (
+                  {filteredStaffList.map((staff) => (
                     <div
                       key={staff.userId}
                       className="p-4 border rounded-lg hover:bg-gray-50 transition duration-200"
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-medium text-gray-900">{staff.fullName}</h3>
+                          <h3 className="font-medium text-gray-900">
+                            {staff.fullName}
+                          </h3>
                           <p className="text-sm text-gray-500">{staff.email}</p>
                         </div>
                         <div className="flex space-x-2">

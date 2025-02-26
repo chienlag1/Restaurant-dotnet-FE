@@ -4,10 +4,14 @@ import LayoutUser from "../layouts/layoutUser";
 import LoginPage from "../pages/loginPage";
 import RegisterPage from "../pages/registerPage";
 import Manager from "../pages/manager/managerDashboard";
-//import LayoutAdmin from "../layouts/layoutAdmin";
+import LayoutAdmin from "../layouts/layoutAdmin";
 import StaffManagement from "../pages/Staffmanager/StaffManagement";
 import "bootstrap/dist/css/bootstrap.min.css";
 import AdminDashboard from "../pages/admin/adminDashboard";
+
+import UserManager from "../pages/userManager/userManagement";
+import MenuManager from "../pages/menuManager/MenuManagement";
+
 const Routes = () => {
   const elements = useRoutes([
     {
@@ -15,15 +19,24 @@ const Routes = () => {
       element: <LayoutUser Page={HomePage} />,
     },
     {
-      path: "/admin-dashboard",
-      element: <AdminDashboard/>,
+      path: "/user-management",
+      element: <LayoutAdmin Page={UserManager} />,
     },
+    {
+      path: "/admin-dashboard",
+      element: <LayoutAdmin Page={AdminDashboard} />,
+    },
+    {
+      path: "/dish-management",
+      element: <LayoutAdmin Page={MenuManager} />,
+    },
+
     {
       path: "/login",
       element: <LoginPage />,
     },
     {
-      path: "/resigter",
+      path: "/register",
       element: <RegisterPage />,
     },
     {
@@ -32,8 +45,8 @@ const Routes = () => {
     },
     {
       path: "/staff-management",
-      element: <StaffManagement />,
-    }
+      element: <LayoutAdmin Page={StaffManagement} />,
+    },
   ]);
   return <div>{elements}</div>;
 };
