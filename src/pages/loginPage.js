@@ -93,7 +93,7 @@ const LoginPage = () => {
                           </button>
                         </div>
 
-                        <a className="small text-muted" href="#!">
+                        <a className="small text-muted" href="/forgot-password">
                           Forgot password?
                         </a>
                         <p

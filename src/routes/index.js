@@ -3,6 +3,9 @@ import HomePage from "../pages/homePage";
 import LayoutUser from "../layouts/layoutUser";
 import LoginPage from "../pages/loginPage";
 import RegisterPage from "../pages/registerPage";
+import ForgotPasswordPage from "../pages/forgotPasswordPage";
+
+import ResetPasswordPage from "../pages/resetPasswordPage";
 import Manager from "../pages/manager/managerDashboard";
 import LayoutAdmin from "../layouts/layoutAdmin";
 import StaffManagement from "../pages/Staffmanager/StaffManagement";
@@ -38,6 +41,15 @@ const Routes = () => {
     {
       path: "/register",
       element: <RegisterPage />,
+    },
+    {
+      path: "/forgot-password",
+      element: <ForgotPasswordPage />,
+    },
+
+    {
+      path: "/reset-password/",
+      element: <ResetPasswordPage />,
     },
     {
       path: "manager-dashboard",
