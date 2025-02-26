@@ -1,27 +1,41 @@
-import EditDetailManagement from "../../components/EditDetailManagement.js"; // Import modal hiển thị chi tiết món ăn
+import React from "react";
+import Modal from "react-bootstrap/Modal";
+import Button from "react-bootstrap/Button";
 
-const MenuManagement = () => {
-  const [selectedProduct, setSelectedProduct] = useState(null);
-
+const EditDetailManagement = ({ selectedProduct, onClose }) => {
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      {/* Danh sách món ăn */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-6">
-        {filteredItems.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            onView={() => setSelectedProduct(product)} // Chọn sản phẩm khi nhấn "Xem"
-            onDelete={() => console.log("Xóa món ăn")}
-          />
-        ))}
-      </div>
-
-      {/* Modal hiển thị chi tiết món ăn */}
-      <EditDetailManagement
-        selectedProduct={selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-      />
-    </div>
+    <Modal show={!!selectedProduct} onHide={onClose}>
+      <Modal.Header closeButton>
+        <Modal.Title>Chi tiết món ăn</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {selectedProduct && (
+          <>
+            <img
+              src={selectedProduct.imageUrl || "/placeholder.jpg"}
+              alt={selectedProduct.name}
+              className="w-100 mb-3"
+            />
+            <h4>{selectedProduct.name}</h4>
+            <p>
+              <strong>Giá:</strong>{" "}
+              {selectedProduct.price.toLocaleString("vi-VN")} VND
+            </p>
+            <p>
+              <strong>Danh Mục:</strong> {selectedProduct.category}
+            </p>
+            <p>
+              <strong>Chi tiết:</strong> {selectedProduct.description}
+            </p>
+          </>
+        )}
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="secondary" onClick={onClose}>
+          Đóng
+        </Button>
+      </Modal.Footer>
+    </Modal>
   );
 };
+export default EditDetailManagement;

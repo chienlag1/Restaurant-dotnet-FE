@@ -24,9 +24,12 @@ export default function StaffManagement() {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get("http://localhost:5112/api/staff", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        "http://localhost:5112/api/staff/get-all-staff",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       const staffData = res.data?.$values || [];
       if (Array.isArray(staffData)) {
         setStaffList(staffData);
@@ -49,7 +52,7 @@ export default function StaffManagement() {
   const onSubmit = async (data) => {
     try {
       const url = editingStaff
-        ? `http://localhost:5112/api/staff/update-staff/${editingStaff.userId}`
+        ? `http://localhost:5112/api/staff/update-staff-by-id/${editingStaff.userId}`
         : "http://localhost:5112/api/staff/create-staff";
 
       await axios({
@@ -80,7 +83,7 @@ export default function StaffManagement() {
     if (window.confirm("Bạn có chắc chắn muốn xóa nhân viên này?")) {
       try {
         await axios.delete(
-          `http://localhost:5112/api/staff/delete-staff/${id}`,
+          `http://localhost:5112/api/staff/delete-staff-by-id/${id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }

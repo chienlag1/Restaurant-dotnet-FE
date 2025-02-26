@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
       };
 
       setUser(loggedInUser);
-      localStorage.setItem("authToken", data.token); // Lưu token vào localStorage
+      localStorage.setItem("authToken", data.token);
 
       // Điều hướng dựa trên roleId
       if (loggedInUser.roleId === 1) {

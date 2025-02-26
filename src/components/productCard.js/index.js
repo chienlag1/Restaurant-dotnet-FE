@@ -6,7 +6,7 @@ const ProductCard = ({ product, onView, onDelete }) => {
     <Card style={{ width: "18rem" }}>
       <Card.Img
         variant="top"
-        src={product.imageUrl}
+        src={product.imageUrl || "/placeholder.jpg"}
         alt={product.name}
         style={{ height: "200px", objectFit: "cover" }}
       />
@@ -17,7 +17,10 @@ const ProductCard = ({ product, onView, onDelete }) => {
           <button className="btn btn-primary" onClick={() => onView(product)}>
             Xem
           </button>
-          <button className="btn btn-danger" onClick={onDelete}>
+          <button
+            className="btn btn-danger"
+            onClick={() => onDelete(product.menuItemId)}
+          >
             Xoá
           </button>
         </div>
