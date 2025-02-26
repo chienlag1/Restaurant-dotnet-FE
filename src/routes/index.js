@@ -14,6 +14,7 @@ import AdminDashboard from "../pages/admin/adminDashboard";
 
 import UserManager from "../pages/userManager/userManagement";
 import MenuManager from "../pages/menuManager/MenuManagement";
+import MenuListPage from "../pages/menuManager/MenuListPage";
 
 const Routes = () => {
   const elements = useRoutes([
@@ -58,6 +59,10 @@ const Routes = () => {
     {
       path: "/staff-management",
       element: <LayoutAdmin Page={StaffManagement} />,
+    },
+    {
+      path: "/menu",
+      element: <LayoutUser Page={MenuListPage} />,
     },
   ]);
   return <div>{elements}</div>;
