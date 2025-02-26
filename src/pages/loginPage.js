@@ -101,7 +101,7 @@ const LoginPage = () => {
                           style={{ color: "#393f81" }}
                         >
                           Don't have an account?{" "}
-                          <a href="/resigter" style={{ color: "#393f81" }}>
+                          <a href="/register" style={{ color: "#393f81" }}>
                             Register here
                           </a>
                         </p>
