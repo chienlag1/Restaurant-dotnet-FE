@@ -14,12 +14,14 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const token = localStorage.getItem("authToken");
+        let token = localStorage.getItem("authToken");
+
         if (!token) {
           setError("Bạn chưa đăng nhập. Vui lòng đăng nhập lại.");
           setLoading(false);
           return;
         }
+
         const response = await axios.get(
           "http://localhost:5112/api/users/search?keyword=@",
           {
@@ -31,10 +33,19 @@ const AdminDashboard = () => {
         setLoading(false);
       } catch (error) {
         console.error("Lỗi khi tải danh sách người dùng:", error);
-        setError("Lỗi khi tải danh sách người dùng. Vui lòng thử lại.");
+
+        if (error.response?.status === 401) {
+          console.warn("Token có thể đã hết hạn, đăng xuất người dùng.");
+          localStorage.removeItem("authToken");
+          window.location.href = "/login";
+        } else {
+          setError("Lỗi khi tải danh sách người dùng. Vui lòng thử lại.");
+        }
+
         setLoading(false);
       }
     };
+
     fetchUsers();
   }, []);
 

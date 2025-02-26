@@ -1,27 +1,28 @@
-// ProductCard.js
 import React from "react";
+import Card from "react-bootstrap/Card";
 
-const ProductCard = ({ product, isSelected, onClick, onAddToCart }) => {
+const ProductCard = ({ product, onView, onDelete }) => {
   return (
-    <div
-      onClick={onClick}
-      className={`product-card ${isSelected ? "selected" : ""}`}
-      style={{ width: "18rem" }}
-    >
-      <img
-        style={{ border: "20px" }}
+    <Card style={{ width: "18rem" }}>
+      <Card.Img
+        variant="top"
         src={product.imageUrl}
-        className="card-img-top"
         alt={product.name}
+        style={{ height: "200px", objectFit: "cover" }}
       />
-      <div className="card-body">
-        <h5 className="card-title">{product.name}</h5>
-        <p className="card-text">{product.price.toLocaleString("vi-VN")} VND</p>
-        <button className="btn btn-primary" onClick={onAddToCart}>
-          Buy
-        </button>
-      </div>
-    </div>
+      <Card.Body>
+        <Card.Title>{product.name}</Card.Title>
+        <Card.Text>{product.price.toLocaleString("vi-VN")} VND</Card.Text>
+        <div className="d-flex justify-content-center gap-3">
+          <button className="btn btn-primary" onClick={() => onView(product)}>
+            Xem
+          </button>
+          <button className="btn btn-danger" onClick={onDelete}>
+            Xoá
+          </button>
+        </div>
+      </Card.Body>
+    </Card>
   );
 };
 
