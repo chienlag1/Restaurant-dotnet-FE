@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ProductCard from "../../components/productCard.js";
 import EditDetailManagement from "./EditDetailManagement.js";
@@ -12,16 +12,82 @@ const MenuManagement = () => {
   const handleClose = () => setShow(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
-  const [filteredItems, setFilteredItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [newItem, setNewItem] = useState({
     name: "",
     description: "",
     price: "",
-    category: "",
+    category: "Món Chính",
     imageUrl: "",
     isAvailable: true,
   });
+
+  // State cho phân trang
+  const [currentCategory, setCurrentCategory] = useState("mainDishes");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+
+  // Phân loại danh sách món ăn theo danh mục
+  const mainDishes = menuItems.filter((item) => item.category === "Món Chính");
+  const desserts = menuItems.filter((item) => item.category === "Tráng Miệng");
+  const drinks = menuItems.filter((item) => item.category === "Đồ Uống");
+
+  // Lấy danh sách món ăn hiển thị dựa trên danh mục hiện tại
+  const getCurrentItems = () => {
+    switch (currentCategory) {
+      case "mainDishes":
+        return mainDishes;
+      case "desserts":
+        return desserts;
+      case "drinks":
+        return drinks;
+      default:
+        return [];
+    }
+  };
+
+  // Tính toán danh sách món ăn hiển thị trên trang hiện tại
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = getCurrentItems().slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+
+  // Hàm chuyển đổi danh mục
+  const handleCategoryChange = (category) => {
+    setCurrentCategory(category);
+    setCurrentPage(1);
+  };
+
+  // Hàm phân trang
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Component phân trang
+  const Pagination = ({ items }) => {
+    const pageNumbers = [];
+    for (let i = 1; i <= Math.ceil(items.length / itemsPerPage); i++) {
+      pageNumbers.push(i);
+    }
+
+    return (
+      <div className="flex justify-center mt-4">
+        {pageNumbers.map((number) => (
+          <button
+            key={number}
+            onClick={() => paginate(number)}
+            className={`mx-1 px-3 py-1 rounded-lg ${
+              currentPage === number
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+          >
+            {number}
+          </button>
+        ))}
+      </div>
+    );
+  };
 
   useEffect(() => {
     fetchMenuItems();
@@ -34,20 +100,15 @@ const MenuManagement = () => {
       );
       const data = response.data?.$values || [];
       setMenuItems(data);
-      setFilteredItems(data);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách món ăn:", error);
       setMenuItems([]);
-      setFilteredItems([]);
     }
   };
 
   const handleAddItem = async () => {
     try {
       const token = localStorage.getItem("authToken");
-
-      localStorage.setItem("authToken", token);
-
       const response = await axios.post(
         "http://localhost:5112/api/menuitem/add-new-menuitem",
         newItem,
@@ -61,18 +122,16 @@ const MenuManagement = () => {
 
       const addedItem = response.data;
       setMenuItems([...menuItems, addedItem]);
-      setFilteredItems([...menuItems, addedItem]);
 
       setNewItem({
         name: "",
         description: "",
         price: "",
-        category: "",
+        category: "Món Chính",
         imageUrl: "",
         isAvailable: true,
       });
 
-      // Đóng modal sau khi thêm thành công
       handleClose();
     } catch (error) {
       console.error("Lỗi khi thêm món ăn:", error.response?.data || error);
@@ -95,10 +154,18 @@ const MenuManagement = () => {
         (item) => item.menuItemId !== menuItemId
       );
       setMenuItems(updatedItems);
-      setFilteredItems(updatedItems);
     } catch (error) {
       console.error("Lỗi khi xoá món ăn:", error.response?.data || error);
     }
+  };
+
+  // Hàm cập nhật danh sách món ăn sau khi chỉnh sửa
+  const handleUpdate = (updatedProduct) => {
+    setMenuItems((prevItems) =>
+      prevItems.map((item) =>
+        item.menuItemId === updatedProduct.menuItemId ? updatedProduct : item
+      )
+    );
   };
 
   return (
@@ -120,6 +187,8 @@ const MenuManagement = () => {
           Thêm món mới
         </button>
       </div>
+
+      {/* Modal thêm món mới */}
       <Modal show={show} onHide={handleClose}>
         <Modal.Header closeButton>
           <Modal.Title>Thêm món mới</Modal.Title>
@@ -159,13 +228,16 @@ const MenuManagement = () => {
             </Form.Group>
             <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
               <Form.Label>Danh Mục</Form.Label>
-              <Form.Control
-                type="text"
+              <Form.Select
                 value={newItem.category}
                 onChange={(e) =>
                   setNewItem({ ...newItem, category: e.target.value })
                 }
-              />
+              >
+                <option value="Món Chính">Món Chính</option>
+                <option value="Tráng Miệng">Tráng Miệng</option>
+                <option value="Đồ Uống">Đồ Uống</option>
+              </Form.Select>
             </Form.Group>
             <Form.Group
               className="mb-3"
@@ -193,8 +265,43 @@ const MenuManagement = () => {
         </Modal.Footer>
       </Modal>
 
+      {/* Nút chuyển đổi danh mục */}
+      <div className="flex justify-center gap-4 mb-6">
+        <button
+          onClick={() => handleCategoryChange("mainDishes")}
+          className={`px-4 py-2 rounded-lg ${
+            currentCategory === "mainDishes"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+        >
+          Món chính
+        </button>
+        <button
+          onClick={() => handleCategoryChange("desserts")}
+          className={`px-4 py-2 rounded-lg ${
+            currentCategory === "desserts"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+        >
+          Tráng miệng
+        </button>
+        <button
+          onClick={() => handleCategoryChange("drinks")}
+          className={`px-4 py-2 rounded-lg ${
+            currentCategory === "drinks"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+        >
+          Đồ uống
+        </button>
+      </div>
+
+      {/* Hiển thị danh sách món ăn */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-6">
-        {filteredItems.map((product) => (
+        {currentItems.map((product) => (
           <ProductCard
             key={product.menuItemId}
             product={product}
@@ -204,9 +311,14 @@ const MenuManagement = () => {
         ))}
       </div>
 
+      {/* Phân trang */}
+      <Pagination items={getCurrentItems()} />
+
+      {/* Modal chỉnh sửa chi tiết */}
       <EditDetailManagement
         selectedProduct={selectedProduct}
         onClose={() => setSelectedProduct(null)}
+        onUpdate={handleUpdate} // Truyền hàm handleUpdate vào đây
       />
     </div>
   );

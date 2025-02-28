@@ -14,11 +14,23 @@ export default function StaffManagement() {
   const [successMessage, setSuccessMessage] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1); // State cho trang hiện tại
+  const itemsPerPage = 5; // Số lượng nhân viên hiển thị trên mỗi trang
 
+  // Lọc danh sách nhân viên dựa trên searchQuery
   const filteredStaffList = staffList.filter((staff) =>
     staff.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Tính toán danh sách nhân viên hiển thị trên trang hiện tại
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentStaffList = filteredStaffList.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+
+  // Hàm fetch danh sách nhân viên
   const fetchStaff = useCallback(async () => {
     if (!token) return;
     setLoading(true);
@@ -43,12 +55,14 @@ export default function StaffManagement() {
     } finally {
       setLoading(false);
     }
-  }, [token]); // Chỉ thay đổi khi token thay đổi
+  }, [token]);
 
+  // Gọi hàm fetchStaff khi component được render
   useEffect(() => {
     fetchStaff();
   }, [fetchStaff]);
 
+  // Hàm xử lý khi submit form (thêm hoặc cập nhật nhân viên)
   const onSubmit = async (data) => {
     try {
       const url = editingStaff
@@ -74,11 +88,13 @@ export default function StaffManagement() {
     }
   };
 
+  // Hàm xử lý khi nhấn nút "Sửa"
   const handleEdit = (staff) => {
     setEditingStaff(staff);
     reset({ fullName: staff.fullName, email: staff.email, password: "" });
   };
 
+  // Hàm xử lý khi nhấn nút "Xóa"
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa nhân viên này?")) {
       try {
@@ -95,6 +111,39 @@ export default function StaffManagement() {
         setError("Không thể xóa nhân viên.");
       }
     }
+  };
+
+  // Hàm phân trang
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Component phân trang
+  const Pagination = () => {
+    const pageNumbers = [];
+    for (
+      let i = 1;
+      i <= Math.ceil(filteredStaffList.length / itemsPerPage);
+      i++
+    ) {
+      pageNumbers.push(i);
+    }
+
+    return (
+      <div className="flex justify-center mt-4">
+        {pageNumbers.map((number) => (
+          <button
+            key={number}
+            onClick={() => paginate(number)}
+            className={`mx-1 px-3 py-1 rounded-lg ${
+              currentPage === number
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+          >
+            {number}
+          </button>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -187,7 +236,7 @@ export default function StaffManagement() {
               </div>
             </form>
 
-            {/* Danh sách nhân viên */}
+            {/* Tìm kiếm */}
             <div className="mb-4">
               <input
                 type="text"
@@ -198,6 +247,7 @@ export default function StaffManagement() {
               />
             </div>
 
+            {/* Danh sách nhân viên */}
             {loading ? (
               <div className="flex justify-center items-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -205,7 +255,7 @@ export default function StaffManagement() {
             ) : staffList.length > 0 ? (
               <div className="bg-white rounded-lg overflow-hidden">
                 <div className="grid gap-4">
-                  {filteredStaffList.map((staff) => (
+                  {currentStaffList.map((staff) => (
                     <div
                       key={staff.userId}
                       className="p-4 border rounded-lg hover:bg-gray-50 transition duration-200"
@@ -235,6 +285,8 @@ export default function StaffManagement() {
                     </div>
                   ))}
                 </div>
+                {/* Phân trang */}
+                <Pagination />
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">

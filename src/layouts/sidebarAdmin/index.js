@@ -57,7 +57,7 @@ const SidebarAdmin = () => {
           }
         >
           <i className="fas fa-utensils text-lg mr-3"></i>
-          <span className="text-base font-medium">Quản Lí User</span>
+          <span className="text-base font-medium">Quản Lí Khách Hàng</span>
         </NavLink>
         <NavLink
           to="/dish-management"

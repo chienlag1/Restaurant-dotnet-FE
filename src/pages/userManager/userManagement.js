@@ -12,6 +12,7 @@ const UserManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 10;
 
+  // Modal Reset Password
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [newPassword, setNewPassword] = useState("");
@@ -119,6 +120,8 @@ const UserManagement = () => {
 
       {!loading && !error && (
         <>
+          <div className="flex justify-end mb-3"></div>
+
           <div className="d-flex justify-content-between mb-3">
             <select
               className="form-select w-auto"
@@ -130,6 +133,7 @@ const UserManagement = () => {
               <option value="Manager">Manager</option>
               <option value="Staff">Staff</option>
             </select>
+
             <input
               type="text"
               className="form-control w-25"
