@@ -55,8 +55,6 @@ const AdminDashboard = () => {
         return "User";
       case 2:
         return "Admin";
-      case 3:
-        return "Manager";
       case 4:
         return "Staff";
       default:
@@ -70,8 +68,7 @@ const AdminDashboard = () => {
         return 1;
       case "Admin":
         return 2;
-      case "Manager":
-        return 3;
+
       case "Staff":
         return 4;
       default:
@@ -151,7 +148,7 @@ const AdminDashboard = () => {
               <option value="all">All</option>
               <option value="Admin">Admin</option>
               <option value="User">User</option>
-              <option value="Manager">Manager</option>
+
               <option value="Staff">Staff</option>
             </select>
             <input
@@ -195,7 +192,7 @@ const AdminDashboard = () => {
                       >
                         <option value="User">User</option>
                         <option value="Admin">Admin</option>
-                        <option value="Manager">Manager</option>
+
                         <option value="Staff">Staff</option>
                       </select>
                     </td>

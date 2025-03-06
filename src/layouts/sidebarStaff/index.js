@@ -2,7 +2,7 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-const SidebarAdmin = () => {
+const SidebarStaff = () => {
   const { logout } = useAuth();
 
   return (
@@ -33,19 +33,6 @@ const SidebarAdmin = () => {
           <span className="text-base font-medium">Dashboard</span>
         </NavLink>
 
-        <NavLink
-          to="/staff-management"
-          className={({ isActive }) =>
-            `flex items-center px-4 py-3 rounded-lg transition no-underline ${
-              isActive
-                ? "bg-gray-700 text-white"
-                : "text-gray-300 hover:bg-gray-700 hover:text-white"
-            }`
-          }
-        >
-          <i className="fas fa-utensils text-lg mr-3"></i>
-          <span className="text-base font-medium">Quản Lí Nhân Viên</span>
-        </NavLink>
         <NavLink
           to="/user-management"
           className={({ isActive }) =>
@@ -100,4 +87,4 @@ const SidebarAdmin = () => {
   );
 };
 
-export default SidebarAdmin;
+export default SidebarStaff;

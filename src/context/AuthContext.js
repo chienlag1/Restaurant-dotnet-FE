@@ -1,12 +1,20 @@
 import React, { createContext, useContext, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
+import { useEffect } from "react";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem("authToken");
+    if (storedToken) {
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+      setUser(storedUser);
+    }
+  }, []);
 
   const signup = async (FullName, Email, Password, roleId) => {
     try {
@@ -61,14 +69,12 @@ export const AuthProvider = ({ children }) => {
 
       setUser(loggedInUser);
       localStorage.setItem("authToken", data.token);
-
+      console.log("Người dùng sau đăng nhập:", loggedInUser);
       // Điều hướng dựa trên roleId
       if (loggedInUser.roleId === 1) {
         navigate("/");
       } else if (loggedInUser.roleId === 2) {
         navigate("/admin-dashboard");
-      } else if (loggedInUser.roleId === 3) {
-        navigate("/manager-dashboard");
       } else if (loggedInUser.roleId === 4) {
         navigate("/staff-dashboard");
       } else {
@@ -82,6 +88,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     if (window.confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
       setUser(null);
+      localStorage.removeItem("authToken");
       navigate("/");
     }
   };

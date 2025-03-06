@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Modal, Button, Form } from "react-bootstrap";
+import AddUser from "./addUserManagement";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -11,6 +12,10 @@ const UserManagement = () => {
   const [filterRole, setFilterRole] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 10;
+
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const handleShowAddUserModal = () => setShowAddUserModal(true);
+  const handleCloseAddUserModal = () => setShowAddUserModal(false);
 
   // Modal Reset Password
   const [showModal, setShowModal] = useState(false);
@@ -48,8 +53,7 @@ const UserManagement = () => {
         return "User";
       case 2:
         return "Admin";
-      case 3:
-        return "Manager";
+
       case 4:
         return "Staff";
       default:
@@ -99,6 +103,46 @@ const UserManagement = () => {
     }
   };
 
+  const handleAddUser = async (newUser) => {
+    if (!newUser.email || !newUser.fullName || !newUser.password) {
+      alert("Vui lòng điền đầy đủ thông tin!");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        alert("Bạn chưa đăng nhập. Vui lòng đăng nhập lại.");
+        window.location.href = "/login";
+        return;
+      }
+
+      const response = await axios.post(
+        "http://localhost:5112/api/customer/create-customer",
+        newUser,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      setUsers([...users, response.data]);
+      alert("Thêm khách hàng thành công!");
+    } catch (error) {
+      console.error("Error response:", error.response);
+
+      if (error.response && error.response.status === 401) {
+        alert("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+        localStorage.removeItem("authToken");
+        window.location.href = "/login";
+      } else {
+        alert("Lỗi khi thêm khách hàng!");
+      }
+    }
+  };
+
   const filteredUsers = users.filter(
     (user) =>
       (filterRole === "all" || getRoleName(user.roleId) === filterRole) &&
@@ -121,7 +165,14 @@ const UserManagement = () => {
       {!loading && !error && (
         <>
           <div className="flex justify-end mb-3"></div>
-
+          <div className="flex justify-end mb-3">
+            <Button
+              className="btn btn-primary"
+              onClick={handleShowAddUserModal}
+            >
+              Thêm Khách Hàng
+            </Button>
+          </div>
           <div className="d-flex justify-content-between mb-3">
             <select
               className="form-select w-auto"
@@ -130,7 +181,7 @@ const UserManagement = () => {
               <option value="all">All</option>
               <option value="Admin">Admin</option>
               <option value="User">User</option>
-              <option value="Manager">Manager</option>
+
               <option value="Staff">Staff</option>
             </select>
 
@@ -252,6 +303,11 @@ const UserManagement = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+      <AddUser
+        showModal={showAddUserModal}
+        handleCloseModal={handleCloseAddUserModal}
+        handleAddUser={handleAddUser}
+      />
     </div>
   );
 };
