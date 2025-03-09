@@ -85,6 +85,19 @@ const SidebarAdmin = () => {
           <i className="fas fa-utensils text-lg mr-3"></i>
           <span className="text-base font-medium">Quản Lí Bàn Ăn</span>
         </NavLink>
+        <NavLink
+          to="/order-management"
+          className={({ isActive }) =>
+            `flex items-center px-4 py-3 rounded-lg transition no-underline ${
+              isActive
+                ? "bg-gray-700 text-white"
+                : "text-gray-300 hover:bg-gray-700 hover:text-white"
+            }`
+          }
+        >
+          <i className="fas fa-utensils text-lg mr-3"></i>
+          <span className="text-base font-medium">Quản Lí Order</span>
+        </NavLink>
       </nav>
 
       {/* Logout Button */}

@@ -10,9 +10,9 @@ const TableManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [tableNumbers, setTableNumbers] = useState({}); // State để quản lý số bàn
   const tablesPerPage = 8; // Số bàn mỗi trang
 
-  // Lấy danh sách bàn ăn
   const fetchTables = useCallback(async () => {
     try {
       const token = localStorage.getItem("authToken");
@@ -26,9 +26,19 @@ const TableManagement = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      console.log("Fetched tables:", response.data.tables.$values); // Log dữ liệu trả về
+
       if (response.data.tables && Array.isArray(response.data.tables.$values)) {
-        setTables(response.data.tables.$values);
-        setFilteredTables(response.data.tables.$values); // Cập nhật danh sách bàn sau khi fetch
+        const tablesData = response.data.tables.$values;
+        setTables(tablesData);
+        setFilteredTables(tablesData);
+
+        // Khởi tạo số bàn dựa trên thứ tự trong danh sách
+        const numbers = {};
+        tablesData.forEach((table, index) => {
+          numbers[table.tableId] = index + 1; // Số bàn bắt đầu từ 1
+        });
+        setTableNumbers(numbers);
       } else {
         console.error(
           "❌ API không trả về danh sách bàn hợp lệ!",
@@ -45,8 +55,8 @@ const TableManagement = () => {
   }, []);
 
   useEffect(() => {
-    fetchTables();
-  }, [fetchTables]);
+    setFilteredTables(tables);
+  }, [tables]);
 
   // Thêm bàn mới
   const handleAddTable = async () => {
@@ -62,18 +72,12 @@ const TableManagement = () => {
         return;
       }
 
-      // Lấy danh sách ID bàn hiện tại
-      const existingIds = new Set(tables.map((table) => table.tableId));
-
-      // Tìm ID nhỏ nhất còn trống
-      let newId = 1;
-      while (existingIds.has(newId)) {
-        newId++;
-      }
-
+      // Tạo bàn mới với tableId tự động tăng
+      const newTableId =
+        Math.max(...tables.map((table) => table.tableId), 0) + 1;
       await axios.post(
         "http://localhost:5112/api/tables/create-table",
-        { tableId: newId, capacity: newTable.capacity },
+        { tableId: newTableId, capacity: newTable.capacity },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -93,6 +97,8 @@ const TableManagement = () => {
         return;
       }
 
+      console.log("Updating table with status:", editingTable.status);
+
       await axios.put(
         `http://localhost:5112/api/tables/update-table/${editingTable.tableId}`,
         {
@@ -102,18 +108,39 @@ const TableManagement = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      fetchTables();
-      closeEditModal();
+      // ✅ Cập nhật state ngay lập tức để UI phản ánh thay đổi
+      setTables((prevTables) => {
+        return prevTables.map((table) =>
+          table.tableId === editingTable.tableId
+            ? { ...table, status: editingTable.status }
+            : table
+        );
+      });
+
+      setFilteredTables((prevTables) => {
+        return prevTables.map((table) =>
+          table.tableId === editingTable.tableId
+            ? { ...table, status: editingTable.status }
+            : table
+        );
+      });
+
+      // ✅ Fetch lại từ API để đảm bảo dữ liệu chính xác từ database
+      setTimeout(() => {
+        fetchTables();
+      }, 500);
+
+      closeEditModal(); // Đóng modal chỉnh sửa
     } catch (error) {
       console.error("❌ Error updating table:", error);
     }
   };
 
   const openEditModal = (table) => {
-    setEditingTable(table);
+    console.log("Editing table status:", table.status); // Log giá trị status
+    setEditingTable({ ...table });
     setIsEditModalOpen(true);
   };
-
   const closeEditModal = () => {
     setEditingTable(null);
     setIsEditModalOpen(false);
@@ -131,7 +158,7 @@ const TableManagement = () => {
       await axios.delete(
         `http://localhost:5112/api/tables/delete-table/${tableId}`,
         {
-          headers: { Authorization: `Bearer ${token}` }, // Thêm token vào header
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -203,8 +230,8 @@ const TableManagement = () => {
         {currentTables.length > 0 ? (
           currentTables.map((table) => (
             <TableCard
-              key={table.id}
-              table={table}
+              key={table.tableId} // Sử dụng tableId làm key
+              table={{ ...table, tableNumber: tableNumbers[table.tableId] }}
               onDelete={handleDelete}
               onEdit={() => openEditModal(table)}
             />
@@ -235,9 +262,10 @@ const TableManagement = () => {
             <select
               className="border p-2 rounded-md w-full"
               value={editingTable.status}
-              onChange={(e) =>
-                setEditingTable({ ...editingTable, status: e.target.value })
-              }
+              onChange={(e) => {
+                console.log("Selected status:", e.target.value); // Log giá trị được chọn
+                setEditingTable({ ...editingTable, status: e.target.value });
+              }}
             >
               <option value="available">Còn trống</option>
               <option value="occupied">Đã đặt bàn</option>
