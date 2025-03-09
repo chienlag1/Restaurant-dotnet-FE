@@ -20,7 +20,7 @@ const SidebarStaff = () => {
       {/* Menu */}
       <nav className="flex-1 px-4 py-6 space-y-2">
         <NavLink
-          to="/admin-dashboard"
+          to="/staff-dashboard"
           className={({ isActive }) =>
             `flex items-center px-4 py-3 rounded-lg transition no-underline ${
               isActive
@@ -31,46 +31,6 @@ const SidebarStaff = () => {
         >
           <i className="fas fa-columns text-lg mr-3"></i>
           <span className="text-base font-medium">Dashboard</span>
-        </NavLink>
-
-        <NavLink
-          to="/user-management"
-          className={({ isActive }) =>
-            `flex items-center px-4 py-3 rounded-lg transition no-underline ${
-              isActive
-                ? "bg-gray-700 text-white"
-                : "text-gray-300 hover:bg-gray-700 hover:text-white"
-            }`
-          }
-        >
-          <i className="fas fa-utensils text-lg mr-3"></i>
-          <span className="text-base font-medium">Quản Lí Khách Hàng</span>
-        </NavLink>
-        <NavLink
-          to="/dish-management"
-          className={({ isActive }) =>
-            `flex items-center px-4 py-3 rounded-lg transition no-underline ${
-              isActive
-                ? "bg-gray-700 text-white"
-                : "text-gray-300 hover:bg-gray-700 hover:text-white"
-            }`
-          }
-        >
-          <i className="fas fa-utensils text-lg mr-3"></i>
-          <span className="text-base font-medium">Quản Lí Thực Đơn</span>
-        </NavLink>
-        <NavLink
-          to="/table-management"
-          className={({ isActive }) =>
-            `flex items-center px-4 py-3 rounded-lg transition no-underline ${
-              isActive
-                ? "bg-gray-700 text-white"
-                : "text-gray-300 hover:bg-gray-700 hover:text-white"
-            }`
-          }
-        >
-          <i className="fas fa-utensils text-lg mr-3"></i>
-          <span className="text-base font-medium">Quản Lí Bàn Ăn</span>
         </NavLink>
       </nav>
 

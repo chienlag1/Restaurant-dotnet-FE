@@ -15,6 +15,7 @@ import MenuManager from "../pages/menuManager/MenuManagement";
 import MenuListPage from "../pages/menuManager/MenuListPage";
 import TableManagement from "../pages/tableManager/TableManagement";
 import Staff from "../pages/staff/staffDashboard";
+import StaffDashboard from "../pages/staff/staffDashboard";
 
 import LayoutStaff from "../layouts/layoutStaff";
 const Routes = () => {
@@ -71,6 +72,10 @@ const Routes = () => {
       path: "/menu",
       element: <LayoutUser Page={MenuListPage} />,
     },
+    {
+      path: "/staff-dashboard",
+      element: <LayoutStaff Page={StaffDashboard} />,
+    }
   ]);
   return <div>{elements}</div>;
 };
