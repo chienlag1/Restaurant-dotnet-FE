@@ -13,6 +13,11 @@ const TableManagement = () => {
   const [tableNumbers, setTableNumbers] = useState({}); // State để quản lý số bàn
   const tablesPerPage = 8; // Số bàn mỗi trang
 
+  // ✅ Cập nhật danh sách hiển thị khi `tables` thay đổi
+  useEffect(() => {
+    setFilteredTables(tables);
+  }, [tables]);
+
   const fetchTables = useCallback(async () => {
     try {
       const token = localStorage.getItem("authToken");
@@ -55,6 +60,10 @@ const TableManagement = () => {
   }, []);
 
   useEffect(() => {
+    fetchTables();
+  }, [fetchTables]);
+
+  useEffect(() => {
     setFilteredTables(tables);
   }, [tables]);
 
@@ -72,19 +81,35 @@ const TableManagement = () => {
         return;
       }
 
-      // Tạo bàn mới với tableId tự động tăng
+      // ✅ Tạo tableId tự động tăng
       const newTableId =
         Math.max(...tables.map((table) => table.tableId), 0) + 1;
+
+      // ✅ Luôn đặt trạng thái mặc định là "available" (còn trống)
       await axios.post(
         "http://localhost:5112/api/tables/create-table",
-        { tableId: newTableId, capacity: newTable.capacity },
+        {
+          tableId: newTableId,
+          capacity: newTable.capacity,
+          status: "available",
+        }, // 💡 Gán mặc định trạng thái
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setNewTable({ capacity: "" });
-      fetchTables(); // Cập nhật danh sách bàn sau khi thêm
+
+      // ✅ Cập nhật UI ngay lập tức thay vì chờ fetch lại từ server
+      setTables((prevTables) => [
+        ...prevTables,
+        {
+          tableId: newTableId,
+          capacity: newTable.capacity,
+          status: "available", // 💡 Đảm bảo trạng thái luôn là "available" khi thêm bàn
+          tableNumber: prevTables.length + 1,
+        },
+      ]);
     } catch (error) {
-      console.error("❌ Error adding table:", error);
+      console.error("❌ Lỗi khi thêm bàn:", error);
     }
   };
 
@@ -112,7 +137,7 @@ const TableManagement = () => {
       setTables((prevTables) => {
         return prevTables.map((table) =>
           table.tableId === editingTable.tableId
-            ? { ...table, status: editingTable.status }
+            ? { ...table, status: editingTable.status } // Tạo object mới để React nhận diện
             : table
         );
       });
@@ -120,15 +145,10 @@ const TableManagement = () => {
       setFilteredTables((prevTables) => {
         return prevTables.map((table) =>
           table.tableId === editingTable.tableId
-            ? { ...table, status: editingTable.status }
+            ? { ...table, status: editingTable.status } // Cập nhật filteredTables
             : table
         );
       });
-
-      // ✅ Fetch lại từ API để đảm bảo dữ liệu chính xác từ database
-      setTimeout(() => {
-        fetchTables();
-      }, 500);
 
       closeEditModal(); // Đóng modal chỉnh sửa
     } catch (error) {

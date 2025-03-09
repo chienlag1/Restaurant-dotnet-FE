@@ -1,33 +1,40 @@
 import React from "react";
 
 const TableItem = ({ table, onClick }) => {
+  const statusClass =
+    table.status === "available"
+      ? "bg-green-100 text-green-700" // Còn trống (Xanh)
+      : "bg-red-100 text-red-700"; // Đã đặt bàn (Đỏ)
+
+  const statusText = table.status === "available" ? "Còn trống" : "Đã đặt bàn";
+
   return (
     <div
-      className={`bg-white shadow-md rounded-xl p-4 text-center cursor-pointer ${
-        table.status === "Available"
-          ? "border-2 border-green-500"
-          : table.status === "Occupied"
-          ? "border-2 border-red-500"
-          : "border-2 border-yellow-500"
-      }`}
-      onClick={() => table.status === "Available" && onClick(table)}
+      className={`bg-white shadow-md rounded-lg p-4 text-center cursor-pointer border-2 ${statusClass}`}
+      onClick={() => table.status === "available" && onClick(table)}
     >
-      <h5 className="text-xl font-semibold text-gray-800">
-        Bàn {table.tableId}
-      </h5>
+      {/* ✅ Hiển thị số bàn giống `TableCard` */}
+      <h3 className="text-xl font-bold text-gray-800">
+        Bàn {table.tableNumber}
+      </h3>
       <p className="text-gray-600">Sức chứa: {table.capacity} người</p>
 
+      {/* Status */}
       <div
-        className={`text-sm font-semibold mt-2 px-3 py-1 rounded-full ${
-          table.status === "Available"
-            ? "bg-green-100 text-green-600"
-            : table.status === "Occupied"
-            ? "bg-red-100 text-red-600"
-            : "bg-yellow-100 text-yellow-600"
-        }`}
+        className={`px-3 py-1 mt-2 text-sm font-semibold rounded-full ${statusClass}`}
       >
-        {table.status === "Available" ? "Còn trống" : "Đã đặt bàn"}
+        {statusText}
       </div>
+
+      {/* Nút chọn bàn (Chỉ hiển thị nếu bàn trống) */}
+      {table.status === "available" && (
+        <button
+          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
+          onClick={() => onClick(table)}
+        >
+          Chọn bàn
+        </button>
+      )}
     </div>
   );
 };
