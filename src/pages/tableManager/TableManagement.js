@@ -13,7 +13,7 @@ const TableManagement = () => {
   const [tableNumbers, setTableNumbers] = useState({}); // State để quản lý số bàn
   const tablesPerPage = 8; // Số bàn mỗi trang
 
-  // ✅ Cập nhật danh sách hiển thị khi `tables` thay đổi
+  // Cập nhật danh sách hiển thị khi `tables` thay đổi
   useEffect(() => {
     setFilteredTables(tables);
   }, [tables]);
@@ -22,42 +22,36 @@ const TableManagement = () => {
     try {
       const token = localStorage.getItem("authToken");
       if (!token) {
-        console.error("❌ Token không tồn tại!");
+        console.error("Token không tồn tại!");
         return;
       }
-
+  
       const response = await axios.get(
         "http://localhost:5112/api/tables/get-all-table",
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      console.log("Fetched tables:", response.data.tables.$values); // Log dữ liệu trả về
-
+  
+      console.log("Fetched tables:", response.data.tables.$values);
+  
       if (response.data.tables && Array.isArray(response.data.tables.$values)) {
-        const tablesData = response.data.tables.$values;
-        setTables(tablesData);
-        setFilteredTables(tablesData);
-
-        // Khởi tạo số bàn dựa trên thứ tự trong danh sách
+        const tablesData = response.data.tables.$values.map((table, index) => ({
+          ...table,
+          status: table.status.toLowerCase() === "available" ? "available" : "occupied"
+        }));
+  
         const numbers = {};
         tablesData.forEach((table, index) => {
-          numbers[table.tableId] = index + 1; // Số bàn bắt đầu từ 1
+          numbers[table.tableId] = index + 1;
         });
+  
+        setTables(tablesData);
+        setFilteredTables(tablesData);
         setTableNumbers(numbers);
-      } else {
-        console.error(
-          "❌ API không trả về danh sách bàn hợp lệ!",
-          response.data
-        );
-        setTables([]);
-        setFilteredTables([]);
       }
     } catch (error) {
-      console.error("❌ Error fetching tables:", error);
-      setTables([]);
-      setFilteredTables([]);
+      console.error("Error fetching tables:", error);
     }
-  }, []);
+  }, []);  
 
   useEffect(() => {
     fetchTables();
@@ -73,52 +67,40 @@ const TableManagement = () => {
       alert("Vui lòng nhập sức chứa hợp lệ!");
       return;
     }
-
+  
     try {
       const token = localStorage.getItem("authToken");
       if (!token) {
         console.error("❌ Token không tồn tại!");
         return;
       }
-
-      // ✅ Tạo tableId tự động tăng
-      const newTableId =
-        Math.max(...tables.map((table) => table.tableId), 0) + 1;
-
-      // ✅ Luôn đặt trạng thái mặc định là "available" (còn trống)
-      await axios.post(
+  
+      const response = await axios.post(
         "http://localhost:5112/api/tables/create-table",
         {
-          tableId: newTableId,
           capacity: newTable.capacity,
-          status: "available",
-        }, // 💡 Gán mặc định trạng thái
+          status: "available" // ✅ Luôn đảm bảo status là "available"
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
+  
+      console.log("🚀 API response:", response.data);
+  
+      // ✅ Fetch lại danh sách bàn từ Backend để cập nhật UI
+      fetchTables();
       setNewTable({ capacity: "" });
-
-      // ✅ Cập nhật UI ngay lập tức thay vì chờ fetch lại từ server
-      setTables((prevTables) => [
-        ...prevTables,
-        {
-          tableId: newTableId,
-          capacity: newTable.capacity,
-          status: "available", // 💡 Đảm bảo trạng thái luôn là "available" khi thêm bàn
-          tableNumber: prevTables.length + 1,
-        },
-      ]);
+  
     } catch (error) {
       console.error("❌ Lỗi khi thêm bàn:", error);
     }
   };
-
+  
   // Chỉnh sửa bàn
   const handleUpdateTable = async () => {
     try {
       const token = localStorage.getItem("authToken");
       if (!token) {
-        console.error("❌ Token không tồn tại!");
+        console.error("Token không tồn tại!");
         return;
       }
 
@@ -133,7 +115,7 @@ const TableManagement = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // ✅ Cập nhật state ngay lập tức để UI phản ánh thay đổi
+      //Cập nhật state ngay lập tức để UI phản ánh thay đổi
       setTables((prevTables) => {
         return prevTables.map((table) =>
           table.tableId === editingTable.tableId
@@ -152,7 +134,7 @@ const TableManagement = () => {
 
       closeEditModal(); // Đóng modal chỉnh sửa
     } catch (error) {
-      console.error("❌ Error updating table:", error);
+      console.error("Error updating table:", error);
     }
   };
 
@@ -171,7 +153,7 @@ const TableManagement = () => {
     try {
       const token = localStorage.getItem("authToken");
       if (!token) {
-        console.error("❌ Token không tồn tại!");
+        console.error("Token không tồn tại!");
         return;
       }
 
@@ -184,7 +166,7 @@ const TableManagement = () => {
 
       fetchTables(); // Cập nhật danh sách bàn sau khi xóa
     } catch (error) {
-      console.error("❌ Error deleting table:", error);
+      console.error("Error deleting table:", error);
     }
   };
 
