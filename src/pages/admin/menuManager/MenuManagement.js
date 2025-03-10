@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import ProductCard from "../../components/productCard.js";
+import ProductCard from "../../../components/productCard/index.js";
 import EditDetailManagement from "./EditDetailManagement.js";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";

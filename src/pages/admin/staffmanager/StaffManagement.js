@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function StaffManagement() {
   const { user } = useAuth();
@@ -65,6 +65,13 @@ export default function StaffManagement() {
   // Hàm xử lý khi submit form (thêm hoặc cập nhật nhân viên)
   const onSubmit = async (data) => {
     try {
+      const requestData = {
+        fullName: data.fullName,
+        email: data.email,
+        password: data.password,
+        roleId: editingStaff ? editingStaff.roleId : 4,
+      };
+
       const url = editingStaff
         ? `http://localhost:5112/api/staff/update-staff-by-id/${editingStaff.userId}`
         : "http://localhost:5112/api/staff/create-staff";
@@ -72,7 +79,7 @@ export default function StaffManagement() {
       await axios({
         method: editingStaff ? "put" : "post",
         url,
-        data,
+        data: requestData,
         headers: { Authorization: `Bearer ${token}` },
       });
 

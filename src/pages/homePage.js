@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import Footer from "../layouts/footer";
-import MenuList from "../components/productCard.js/MenuList"
+import MenuList from "../components/productCard/MenuList";
 
 const HomePage = () => {
   const styles = useMemo(
@@ -91,7 +91,9 @@ const HomePage = () => {
 
       {/* Danh sách món ăn */}
       <div id="menu" className="container mx-auto my-10 px-6">
-        <h2 className="text-center text-3xl font-semibold mb-8">Thực Đơn Của Chúng Tôi</h2>
+        <h2 className="text-center text-3xl font-semibold mb-8">
+          Thực Đơn Của Chúng Tôi
+        </h2>
         <MenuList />
       </div>
 

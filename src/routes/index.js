@@ -8,26 +8,41 @@ import ForgotPasswordPage from "../pages/forgotPasswordPage";
 import ResetPasswordPage from "../pages/resetPasswordPage";
 
 import LayoutAdmin from "../layouts/layoutAdmin";
-import StaffManagement from "../pages/Staffmanager/StaffManagement";
+import StaffManagement from "../pages/admin/staffmanager/StaffManagement";
 import AdminDashboard from "../pages/admin/adminDashboard";
-import UserManager from "../pages/userManager/userManagement";
-import MenuManager from "../pages/menuManager/MenuManagement";
-import MenuListPage from "../pages/menuManager/MenuListPage";
-import TableManagement from "../pages/tableManager/TableManagement";
+import UserManager from "../pages/admin/userManager/userManagement";
+import MenuManager from "../pages/admin/menuManager/MenuManagement";
+import MenuListPage from "../pages/admin/menuManager/MenuListPage";
+import TableManagement from "../pages/admin/tableManager/TableManagement";
 import Staff from "../pages/staff/staffDashboard";
 import StaffDashboard from "../pages/staff/staffDashboard";
-
 import LayoutStaff from "../layouts/layoutStaff";
+import Order from "../pages/admin/orderManager/OrderManagement";
+import Menu from "../pages/staff/menu";
+import OrderCustomer from "../pages/staff/order";
 const Routes = () => {
   const elements = useRoutes([
     {
       path: "/",
       element: <LayoutUser Page={HomePage} />,
     },
+    {
+      path: "/order-customer",
+      element: <LayoutStaff Page={OrderCustomer} />,
+    },
+    {
+      path: "/menu-customer",
+      element: <LayoutStaff Page={Menu} />,
+    },
 
     {
       path: "/user-management",
       element: <LayoutAdmin Page={UserManager} />,
+    },
+
+    {
+      path: "/order-management",
+      element: <LayoutAdmin Page={Order} />,
     },
     {
       path: "/admin-dashboard",
@@ -75,7 +90,7 @@ const Routes = () => {
     {
       path: "/staff-dashboard",
       element: <LayoutStaff Page={StaffDashboard} />,
-    }
+    },
   ]);
   return <div>{elements}</div>;
 };

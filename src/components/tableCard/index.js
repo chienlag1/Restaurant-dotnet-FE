@@ -1,9 +1,11 @@
 const TableCard = ({ table, onDelete, onEdit }) => {
   // ✅ Mặc định trạng thái là "Còn trống"
-  const isAvailable = table.status.toLowerCase() === "available";
-  const statusClass = isAvailable ? "bg-green-100 text-green-700 border-green-500" : "bg-red-100 text-red-700 border-red-500";
-  const statusText = isAvailable ? "Còn trống" : "Đã đặt bàn";
+  const isAvailable = table.status.toLowerCase() === "còn trống";
 
+  const statusClass = isAvailable
+    ? "bg-green-100 text-green-700 border-green-500"
+    : "bg-red-100 text-red-700 border-red-500";
+  const statusText = isAvailable ? "Còn trống" : "Đã đặt bàn";
 
   return (
     <div

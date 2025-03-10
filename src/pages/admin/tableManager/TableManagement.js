@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import TableCard from "../../components/tableCard.js";
+import TableCard from "../../../components/tableCard/index.js";
 
 const TableManagement = () => {
   const [tables, setTables] = useState([]);
@@ -25,25 +25,26 @@ const TableManagement = () => {
         console.error("Token không tồn tại!");
         return;
       }
-  
+
       const response = await axios.get(
         "http://localhost:5112/api/tables/get-all-table",
         { headers: { Authorization: `Bearer ${token}` } }
       );
-  
-      console.log("Fetched tables:", response.data.tables.$values);
-  
+
       if (response.data.tables && Array.isArray(response.data.tables.$values)) {
         const tablesData = response.data.tables.$values.map((table, index) => ({
           ...table,
-          status: table.status.toLowerCase() === "available" ? "available" : "occupied"
+          status:
+            table.status.toLowerCase() === "available"
+              ? "Còn trống"
+              : "Đã đặt bàn",
         }));
-  
+
         const numbers = {};
         tablesData.forEach((table, index) => {
           numbers[table.tableId] = index + 1;
         });
-  
+
         setTables(tablesData);
         setFilteredTables(tablesData);
         setTableNumbers(numbers);
@@ -51,7 +52,7 @@ const TableManagement = () => {
     } catch (error) {
       console.error("Error fetching tables:", error);
     }
-  }, []);  
+  }, []);
 
   useEffect(() => {
     fetchTables();
@@ -67,34 +68,33 @@ const TableManagement = () => {
       alert("Vui lòng nhập sức chứa hợp lệ!");
       return;
     }
-  
+
     try {
       const token = localStorage.getItem("authToken");
       if (!token) {
         console.error("❌ Token không tồn tại!");
         return;
       }
-  
+
       const response = await axios.post(
         "http://localhost:5112/api/tables/create-table",
         {
           capacity: newTable.capacity,
-          status: "available" // ✅ Luôn đảm bảo status là "available"
+          status: "Available", // ✅ Luôn đảm bảo status là "Available"
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-  
-      console.log("🚀 API response:", response.data);
-  
+
+      console.log(response.data);
+
       // ✅ Fetch lại danh sách bàn từ Backend để cập nhật UI
       fetchTables();
       setNewTable({ capacity: "" });
-  
     } catch (error) {
       console.error("❌ Lỗi khi thêm bàn:", error);
     }
   };
-  
+
   // Chỉnh sửa bàn
   const handleUpdateTable = async () => {
     try {
@@ -269,8 +269,8 @@ const TableManagement = () => {
                 setEditingTable({ ...editingTable, status: e.target.value });
               }}
             >
-              <option value="available">Còn trống</option>
-              <option value="occupied">Đã đặt bàn</option>
+              <option value="Available">Còn trống</option>
+              <option value="Occupied">Đã đặt bàn</option>
             </select>
             <div className="mt-4 flex justify-end gap-2">
               <button

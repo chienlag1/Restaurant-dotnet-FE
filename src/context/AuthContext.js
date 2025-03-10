@@ -10,11 +10,10 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const storedToken = localStorage.getItem("authToken");
-    if (storedToken) {
-      const storedUser = JSON.parse(localStorage.getItem("user"));
-      setUser(storedUser);
+    if (storedToken && !user) {
+      setUser({ token: storedToken });
     }
-  }, []);
+  }, [user]);
 
   const signup = async (FullName, Email, Password, roleId) => {
     try {
@@ -69,7 +68,7 @@ export const AuthProvider = ({ children }) => {
 
       setUser(loggedInUser);
       localStorage.setItem("authToken", data.token);
-      console.log("Người dùng sau đăng nhập:", loggedInUser);
+
       // Điều hướng dựa trên roleId
       if (loggedInUser.roleId === 1) {
         navigate("/");
