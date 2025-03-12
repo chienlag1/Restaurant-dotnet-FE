@@ -9,7 +9,6 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterRole, setFilterRole] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 10;
 
@@ -53,9 +52,14 @@ const UserManagement = () => {
         return "User";
       case 2:
         return "Admin";
-
+      case 3:
+        return "Manager";
       case 4:
         return "Staff";
+      case 5:
+        return "Customer";
+      case 6:
+        return "KitchenStaff";
       default:
         return "Unknown";
     }
@@ -143,11 +147,12 @@ const UserManagement = () => {
     }
   };
 
+  // Chỉ lọc các người dùng có roleId = 5 (Customer)
   const filteredUsers = users.filter(
     (user) =>
-      (filterRole === "all" || getRoleName(user.roleId) === filterRole) &&
-      (user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
+      user.roleId === 5 && // Chỉ lấy người dùng có roleId = 5 (Customer)
+      (user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
@@ -157,7 +162,7 @@ const UserManagement = () => {
 
   return (
     <div className="container mt-4">
-      <p className="fs-5">Danh Sách Users:</p>
+      <p className="fs-5">Danh Sách Khách Hàng:</p>
 
       {loading && <p>Loading users...</p>}
       {error && <p className="text-danger">{error}</p>}
@@ -174,17 +179,6 @@ const UserManagement = () => {
             </Button>
           </div>
           <div className="d-flex justify-content-between mb-3">
-            <select
-              className="form-select w-auto"
-              onChange={(e) => setFilterRole(e.target.value)}
-            >
-              <option value="all">All</option>
-              <option value="Admin">Admin</option>
-              <option value="User">User</option>
-
-              <option value="Staff">Staff</option>
-            </select>
-
             <input
               type="text"
               className="form-control w-25"
@@ -211,7 +205,7 @@ const UserManagement = () => {
                     <td>
                       <span
                         className={`badge ${
-                          user.roleId === 2 ? "bg-info" : "bg-warning"
+                          user.roleId === 5 ? "bg-info" : "bg-warning"
                         } text-dark`}
                       >
                         {getRoleName(user.roleId)}
@@ -221,7 +215,6 @@ const UserManagement = () => {
                       <button
                         className="btn btn-danger"
                         onClick={() => handleResetPassword(user)}
-                        disabled={user.roleId === 2} // Disable nếu role là Admin (roleId === 2)
                       >
                         Reset Password
                       </button>

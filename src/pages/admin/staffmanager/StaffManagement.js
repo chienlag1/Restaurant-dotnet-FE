@@ -121,35 +121,59 @@ export default function StaffManagement() {
   };
 
   // Hàm phân trang
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
 
-  // Component phân trang
+  // Component phân trang từ AdminDashboard
   const Pagination = () => {
-    const pageNumbers = [];
-    for (
-      let i = 1;
-      i <= Math.ceil(filteredStaffList.length / itemsPerPage);
-      i++
-    ) {
-      pageNumbers.push(i);
-    }
+    const totalPages = Math.ceil(filteredStaffList.length / itemsPerPage);
 
     return (
-      <div className="flex justify-center mt-4">
-        {pageNumbers.map((number) => (
-          <button
-            key={number}
-            onClick={() => paginate(number)}
-            className={`mx-1 px-3 py-1 rounded-lg ${
-              currentPage === number
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+      <nav>
+        <ul className="pagination justify-content-center">
+          {/* Nút Previous */}
+          <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+            <button
+              className="page-link"
+              onClick={() => handlePageChange(currentPage - 1)}
+            >
+              Previous
+            </button>
+          </li>
+
+          {/* Các nút trang */}
+          {Array.from({ length: totalPages }, (_, index) => (
+            <li
+              key={index}
+              className={`page-item ${
+                currentPage === index + 1 ? "active" : ""
+              }`}
+            >
+              <button
+                className="page-link"
+                onClick={() => handlePageChange(index + 1)}
+              >
+                {index + 1}
+              </button>
+            </li>
+          ))}
+
+          {/* Nút Next */}
+          <li
+            className={`page-item ${
+              currentPage === totalPages ? "disabled" : ""
             }`}
           >
-            {number}
-          </button>
-        ))}
-      </div>
+            <button
+              className="page-link"
+              onClick={() => handlePageChange(currentPage + 1)}
+            >
+              Next
+            </button>
+          </li>
+        </ul>
+      </nav>
     );
   };
 
@@ -293,7 +317,11 @@ export default function StaffManagement() {
                   ))}
                 </div>
                 {/* Phân trang */}
-                <Pagination />
+                <div style={{ marginTop: "16px" }}>
+                  {" "}
+                  {/* Thêm margin-top */}
+                  <Pagination />
+                </div>
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">

@@ -1,62 +1,55 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
 import axios from "axios";
+
 const OrderCustomer = () => {
-  const [cartItems, setCartItems] = useState([]);
+  const [cartData, setCartData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const selectedTable = JSON.parse(localStorage.getItem("selectedTable"));
     const cart = JSON.parse(localStorage.getItem("cart")) || {};
-
-    if (selectedTable) {
-      // Lấy giỏ hàng của bàn đã chọn
-      const tableCart = cart[selectedTable.tableId] || [];
-      setCartItems(tableCart);
-    }
-
+    setCartData(cart);
     setLoading(false);
   }, []);
 
-  const updateCart = (updatedItems) => {
-    const selectedTable = JSON.parse(localStorage.getItem("selectedTable"));
+  const updateCart = (tableId, updatedItems) => {
     const cart = JSON.parse(localStorage.getItem("cart")) || {};
 
-    // Cập nhật giỏ hàng của bàn đã chọn
-    cart[selectedTable.tableId] = updatedItems;
+    if (updatedItems.length > 0) {
+      cart[tableId] = updatedItems;
+    } else {
+      delete cart[tableId]; // Nếu bàn không có món nào, xóa khỏi danh sách
+    }
 
-    // Lưu giỏ hàng vào localStorage
     localStorage.setItem("cart", JSON.stringify(cart));
-
-    setCartItems(updatedItems);
+    setCartData(cart);
   };
 
-  const increaseQuantity = (menuItemId) => {
-    const updatedItems = cartItems.map((item) =>
+  const increaseQuantity = (tableId, menuItemId) => {
+    const updatedItems = cartData[tableId].map((item) =>
       item.menuItemId === menuItemId
         ? { ...item, quantity: item.quantity + 1 }
         : item
     );
-    updateCart(updatedItems);
+    updateCart(tableId, updatedItems);
   };
 
-  const decreaseQuantity = (menuItemId) => {
-    const updatedItems = cartItems.map((item) =>
+  const decreaseQuantity = (tableId, menuItemId) => {
+    const updatedItems = cartData[tableId].map((item) =>
       item.menuItemId === menuItemId && item.quantity > 1
         ? { ...item, quantity: item.quantity - 1 }
         : item
     );
-    updateCart(updatedItems);
+    updateCart(tableId, updatedItems);
   };
 
-  const removeItem = (menuItemId) => {
-    const updatedItems = cartItems.filter(
+  const removeItem = (tableId, menuItemId) => {
+    const updatedItems = cartData[tableId].filter(
       (item) => item.menuItemId !== menuItemId
     );
-    updateCart(updatedItems);
+    updateCart(tableId, updatedItems);
   };
 
   const handleOrder = async () => {
@@ -68,26 +61,19 @@ const OrderCustomer = () => {
         return;
       }
 
-      const selectedTable = JSON.parse(localStorage.getItem("selectedTable"));
-
-      if (!selectedTable) {
-        alert("Vui lòng chọn bàn trước khi đặt hàng.");
-        return;
-      }
-
-      const orderData = {
-        customerId: 1, // Thay bằng ID thực tế của khách hàng
-        orderItems: cartItems.map((item) => ({
+      const orders = Object.keys(cartData).map((tableId) => ({
+        customerId: 1, // Cần lấy từ hệ thống người dùng
+        orderItems: cartData[tableId].map((item) => ({
           menuItemId: item.menuItemId,
           quantity: item.quantity,
         })),
-        kitchenStaffId: 1, // Cần sửa theo hệ thống của bạn
-        tableId: selectedTable.tableId, // Sử dụng tableId từ bàn đã chọn
-      };
+        kitchenStaffId: 1, // Cập nhật theo hệ thống của bạn
+        tableId: parseInt(tableId), // Chuyển về số nguyên
+      }));
 
       await axios.post(
-        "http://localhost:5112/api/order/create-order",
-        orderData,
+        "http://localhost:5112/api/order/create-multiple-orders",
+        orders,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -96,10 +82,9 @@ const OrderCustomer = () => {
         }
       );
 
-      alert("Đặt hàng thành công!");
+      alert("Đặt hàng thành công cho tất cả các bàn!");
       localStorage.removeItem("cart");
-      localStorage.removeItem("selectedTable");
-      setCartItems([]);
+      setCartData({});
     } catch (err) {
       console.error("Lỗi khi đặt hàng:", err);
       setError("Đặt hàng thất bại. Vui lòng thử lại!");
@@ -111,56 +96,56 @@ const OrderCustomer = () => {
       <h2 className="text-center fw-bold text-primary">Giỏ Hàng</h2>
       {loading && <p>Đang tải...</p>}
       {error && <p className="text-danger">{error}</p>}
-      {!loading && cartItems.length === 0 ? (
+      {!loading && Object.keys(cartData).length === 0 ? (
         <p className="text-center">Giỏ hàng của bạn đang trống.</p>
       ) : (
         <>
-          {/* Hiển thị thông tin bàn đã chọn */}
-          <div className="mb-4">
-            <h3 className="text-lg font-bold">
-              Bàn đã chọn:{" "}
-              {JSON.parse(localStorage.getItem("selectedTable"))?.tableId}
-            </h3>
-          </div>
-
-          {/* Danh sách món đã chọn */}
-          <ul className="list-group">
-            {cartItems.map((item) => (
-              <li
-                key={item.menuItemId}
-                className="list-group-item d-flex justify-content-between align-items-center"
-              >
-                {item.name} - {item.price}đ
-                <div>
-                  <button
-                    className="btn btn-sm btn-secondary"
-                    onClick={() => decreaseQuantity(item.menuItemId)}
+          {Object.entries(cartData).map(([tableId, items]) => (
+            <div key={tableId} className="mb-5 border p-3 rounded bg-light">
+              <h3 className="text-lg font-bold">Bàn {tableId}</h3>
+              <ul className="list-group">
+                {items.map((item) => (
+                  <li
+                    key={item.menuItemId}
+                    className="list-group-item d-flex justify-content-between align-items-center"
                   >
-                    -
-                  </button>
-                  <span className="mx-2">{item.quantity}</span>
-                  <button
-                    className="btn btn-sm btn-secondary"
-                    onClick={() => increaseQuantity(item.menuItemId)}
-                  >
-                    +
-                  </button>
-                  <button
-                    className="btn btn-sm btn-danger ms-2"
-                    onClick={() => removeItem(item.menuItemId)}
-                  >
-                    Xóa
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+                    {item.name} - {item.price}đ
+                    <div>
+                      <button
+                        className="btn btn-sm btn-secondary"
+                        onClick={() =>
+                          decreaseQuantity(tableId, item.menuItemId)
+                        }
+                      >
+                        -
+                      </button>
+                      <span className="mx-2">{item.quantity}</span>
+                      <button
+                        className="btn btn-sm btn-secondary"
+                        onClick={() =>
+                          increaseQuantity(tableId, item.menuItemId)
+                        }
+                      >
+                        +
+                      </button>
+                      <button
+                        className="btn btn-sm btn-danger ms-2"
+                        onClick={() => removeItem(tableId, item.menuItemId)}
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
           <button
             className="btn btn-primary mt-3 w-100"
             onClick={handleOrder}
-            disabled={cartItems.length === 0}
+            disabled={Object.keys(cartData).length === 0}
           >
-            Đặt Hàng
+            Đặt Hàng Cho Tất Cả Bàn
           </button>
         </>
       )}
