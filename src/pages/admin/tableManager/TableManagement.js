@@ -115,22 +115,36 @@ const TableManagement = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      //Cập nhật state ngay lập tức để UI phản ánh thay đổi
-      setTables((prevTables) => {
-        return prevTables.map((table) =>
+      // Cập nhật state ngay lập tức mà không cần gọi lại API
+      setTables((prevTables) =>
+        prevTables.map((table) =>
           table.tableId === editingTable.tableId
-            ? { ...table, status: editingTable.status } // Tạo object mới để React nhận diện
+            ? {
+                ...table,
+                status:
+                  editingTable.status === "Available"
+                    ? "Còn trống"
+                    : "Đã đặt bàn",
+                capacity: editingTable.capacity,
+              }
             : table
-        );
-      });
+        )
+      );
 
-      setFilteredTables((prevTables) => {
-        return prevTables.map((table) =>
+      setFilteredTables((prevTables) =>
+        prevTables.map((table) =>
           table.tableId === editingTable.tableId
-            ? { ...table, status: editingTable.status } // Cập nhật filteredTables
+            ? {
+                ...table,
+                status:
+                  editingTable.status === "Available"
+                    ? "Còn trống"
+                    : "Đã đặt bàn",
+                capacity: editingTable.capacity,
+              }
             : table
-        );
-      });
+        )
+      );
 
       closeEditModal(); // Đóng modal chỉnh sửa
     } catch (error) {
@@ -140,7 +154,10 @@ const TableManagement = () => {
 
   const openEditModal = (table) => {
     console.log("Editing table status:", table.status); // Log giá trị status
-    setEditingTable({ ...table });
+    setEditingTable({
+      ...table,
+      status: table.status === "Còn trống" ? "Available" : "Occupied",
+    });
     setIsEditModalOpen(true);
   };
   const closeEditModal = () => {
@@ -192,6 +209,61 @@ const TableManagement = () => {
   );
 
   const totalPages = Math.ceil(filteredTables.length / tablesPerPage);
+
+  // Hàm phân trang
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  // Component phân trang từ AdminDashboard
+  const Pagination = () => {
+    return (
+      <nav>
+        <ul className="pagination justify-content-center">
+          {/* Nút Previous */}
+          <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+            <button
+              className="page-link"
+              onClick={() => handlePageChange(currentPage - 1)}
+            >
+              Previous
+            </button>
+          </li>
+
+          {/* Các nút trang */}
+          {Array.from({ length: totalPages }, (_, index) => (
+            <li
+              key={index}
+              className={`page-item ${
+                currentPage === index + 1 ? "active" : ""
+              }`}
+            >
+              <button
+                className="page-link"
+                onClick={() => handlePageChange(index + 1)}
+              >
+                {index + 1}
+              </button>
+            </li>
+          ))}
+
+          {/* Nút Next */}
+          <li
+            className={`page-item ${
+              currentPage === totalPages ? "disabled" : ""
+            }`}
+          >
+            <button
+              className="page-link"
+              onClick={() => handlePageChange(currentPage + 1)}
+            >
+              Next
+            </button>
+          </li>
+        </ul>
+      </nav>
+    );
+  };
 
   return (
     <div className="container mx-auto mt-4 px-4">
@@ -292,34 +364,8 @@ const TableManagement = () => {
 
       {/* Phân trang */}
       {totalPages > 1 && (
-        <div className="mt-6 flex justify-center gap-4">
-          <button
-            className={`px-4 py-2 rounded-md ${
-              currentPage === 1
-                ? "bg-gray-300"
-                : "bg-blue-500 text-white hover:bg-blue-600"
-            }`}
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            Trước
-          </button>
-          <span className="px-4 py-2">
-            Trang {currentPage} / {totalPages}
-          </span>
-          <button
-            className={`px-4 py-2 rounded-md ${
-              currentPage === totalPages
-                ? "bg-gray-300"
-                : "bg-blue-500 text-white hover:bg-blue-600"
-            }`}
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
-            disabled={currentPage === totalPages}
-          >
-            Tiếp
-          </button>
+        <div className="mt-6">
+          <Pagination />
         </div>
       )}
     </div>

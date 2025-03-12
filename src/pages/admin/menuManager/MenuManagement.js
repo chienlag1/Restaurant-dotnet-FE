@@ -27,10 +27,19 @@ const MenuManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
+  // Lọc danh sách món ăn dựa trên searchTerm
+  const filteredItems = menuItems.filter((item) =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   // Phân loại danh sách món ăn theo danh mục
-  const mainDishes = menuItems.filter((item) => item.category === "Món Chính");
-  const desserts = menuItems.filter((item) => item.category === "Tráng Miệng");
-  const drinks = menuItems.filter((item) => item.category === "Đồ Uống");
+  const mainDishes = filteredItems.filter(
+    (item) => item.category === "Món Chính"
+  );
+  const desserts = filteredItems.filter(
+    (item) => item.category === "Tráng Miệng"
+  );
+  const drinks = filteredItems.filter((item) => item.category === "Đồ Uống");
 
   // Lấy danh sách món ăn hiển thị dựa trên danh mục hiện tại
   const getCurrentItems = () => {
@@ -61,31 +70,59 @@ const MenuManagement = () => {
   };
 
   // Hàm phân trang
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
 
-  // Component phân trang
-  const Pagination = ({ items }) => {
-    const pageNumbers = [];
-    for (let i = 1; i <= Math.ceil(items.length / itemsPerPage); i++) {
-      pageNumbers.push(i);
-    }
+  // Component phân trang từ AdminDashboard
+  const Pagination = () => {
+    const totalPages = Math.ceil(getCurrentItems().length / itemsPerPage);
 
     return (
-      <div className="flex justify-center mt-4">
-        {pageNumbers.map((number) => (
-          <button
-            key={number}
-            onClick={() => paginate(number)}
-            className={`mx-1 px-3 py-1 rounded-lg ${
-              currentPage === number
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+      <nav>
+        <ul className="pagination justify-content-center">
+          {/* Nút Previous */}
+          <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+            <button
+              className="page-link"
+              onClick={() => handlePageChange(currentPage - 1)}
+            >
+              Previous
+            </button>
+          </li>
+
+          {/* Các nút trang */}
+          {Array.from({ length: totalPages }, (_, index) => (
+            <li
+              key={index}
+              className={`page-item ${
+                currentPage === index + 1 ? "active" : ""
+              }`}
+            >
+              <button
+                className="page-link"
+                onClick={() => handlePageChange(index + 1)}
+              >
+                {index + 1}
+              </button>
+            </li>
+          ))}
+
+          {/* Nút Next */}
+          <li
+            className={`page-item ${
+              currentPage === totalPages ? "disabled" : ""
             }`}
           >
-            {number}
-          </button>
-        ))}
-      </div>
+            <button
+              className="page-link"
+              onClick={() => handlePageChange(currentPage + 1)}
+            >
+              Next
+            </button>
+          </li>
+        </ul>
+      </nav>
     );
   };
 
@@ -312,7 +349,11 @@ const MenuManagement = () => {
       </div>
 
       {/* Phân trang */}
-      <Pagination items={getCurrentItems()} />
+      <div style={{ marginTop: "16px" }}>
+        {" "}
+        {/* Thêm margin-top */}
+        <Pagination />
+      </div>
 
       {/* Modal chỉnh sửa chi tiết */}
       <EditDetailManagement

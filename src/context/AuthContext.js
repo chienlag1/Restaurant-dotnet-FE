@@ -10,10 +10,10 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const storedToken = localStorage.getItem("authToken");
-    if (storedToken && !user) {
-      setUser({ token: storedToken });
+    if (!storedToken) {
+      navigate("/login");
     }
-  }, [user]);
+  }, [navigate]);
 
   const signup = async (FullName, Email, Password, roleId) => {
     try {
@@ -76,6 +76,7 @@ export const AuthProvider = ({ children }) => {
         navigate("/admin-dashboard");
       } else if (loggedInUser.roleId === 4) {
         navigate("/staff-dashboard");
+        alert("Admin accept this account to service customers");
       } else {
         navigate("/");
       }

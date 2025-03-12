@@ -20,6 +20,7 @@ import LayoutStaff from "../layouts/layoutStaff";
 import Order from "../pages/admin/orderManager/OrderManagement";
 import Menu from "../pages/staff/menu";
 import OrderCustomer from "../pages/staff/order";
+import Promotion from "../pages/admin/promotionManager";
 const Routes = () => {
   const elements = useRoutes([
     {
@@ -35,6 +36,10 @@ const Routes = () => {
       element: <LayoutStaff Page={Menu} />,
     },
 
+    {
+      path: "/promotion-management",
+      element: <LayoutAdmin Page={Promotion} />,
+    },
     {
       path: "/user-management",
       element: <LayoutAdmin Page={UserManager} />,

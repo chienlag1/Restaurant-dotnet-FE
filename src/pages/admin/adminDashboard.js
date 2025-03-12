@@ -55,8 +55,14 @@ const AdminDashboard = () => {
         return "User";
       case 2:
         return "Admin";
+      case 3:
+        return "Manager";
       case 4:
         return "Staff";
+      case 5:
+        return "Customer";
+      case 6:
+        return "KitchenStaff";
       default:
         return "Unknown";
     }
@@ -68,9 +74,14 @@ const AdminDashboard = () => {
         return 1;
       case "Admin":
         return 2;
-
+      case "Manager":
+        return 3;
       case "Staff":
         return 4;
+      case "Customer":
+        return 5;
+      case "KitchenStaff":
+        return 6;
       default:
         return 0;
     }
@@ -148,8 +159,9 @@ const AdminDashboard = () => {
               <option value="all">All</option>
               <option value="Admin">Admin</option>
               <option value="User">User</option>
-
               <option value="Staff">Staff</option>
+              <option value="Customer">Customer</option>
+              <option value="KitchenStaff">KitchenStaff</option>
             </select>
             <input
               type="text"
