@@ -21,6 +21,9 @@ import Order from "../pages/admin/orderManager/OrderManagement";
 import Menu from "../pages/staff/menu";
 import OrderCustomer from "../pages/staff/order";
 import Promotion from "../pages/admin/promotionManager";
+import PromotionForm from "../pages/admin/promotionManager/PromotionForm";
+import PromotionList from "../pages/admin/promotionManager/PromotionList";
+
 const Routes = () => {
   const elements = useRoutes([
     {
@@ -95,6 +98,24 @@ const Routes = () => {
     {
       path: "/staff-dashboard",
       element: <LayoutStaff Page={StaffDashboard} />,
+    },
+    {
+      path: "/promotion-management",
+      element: <LayoutAdmin Page={Promotion} />,
+      children: [
+        {
+          path: "", // Đường dẫn mặc định
+          element: <PromotionList />,
+        },
+        {
+          path: "create", // Đường dẫn để tạo mới khuyến mãi
+          element: <PromotionForm />,
+        },
+        {
+          path: "edit/:id", // Đường dẫn để chỉnh sửa khuyến mãi
+          element: <PromotionForm />,
+        },
+      ],
     },
   ]);
   return <div>{elements}</div>;
