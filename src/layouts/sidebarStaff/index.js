@@ -58,6 +58,19 @@ const SidebarStaff = () => {
           <i className="fas fa-columns text-lg mr-3"></i>
           <span className="text-base font-medium">Danh Sách Order</span>
         </NavLink>
+        <NavLink
+          to="/promotion"
+          className={({ isActive }) =>
+            `flex items-center px-4 py-3 rounded-lg transition no-underline ${
+              isActive
+                ? "bg-gray-700 text-white"
+                : "text-gray-300 hover:bg-gray-700 hover:text-white"
+            }`
+          }
+        >
+          <i className="fas fa-columns text-lg mr-3"></i>
+          <span className="text-base font-medium">Discount</span>
+        </NavLink>
       </nav>
 
       {/* Logout Button */}

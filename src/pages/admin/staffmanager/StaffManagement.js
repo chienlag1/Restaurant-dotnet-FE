@@ -69,7 +69,7 @@ export default function StaffManagement() {
         fullName: data.fullName,
         email: data.email,
         password: data.password,
-        roleId: editingStaff ? editingStaff.roleId : 4,
+        roleId: parseInt(data.roleId), // Lấy giá trị role từ form
       };
 
       const url = editingStaff
@@ -98,7 +98,12 @@ export default function StaffManagement() {
   // Hàm xử lý khi nhấn nút "Sửa"
   const handleEdit = (staff) => {
     setEditingStaff(staff);
-    reset({ fullName: staff.fullName, email: staff.email, password: "" });
+    reset({
+      fullName: staff.fullName,
+      email: staff.email,
+      password: "",
+      roleId: staff.roleId.toString(), // Đảm bảo roleId là string để select hoạt động
+    });
   };
 
   // Hàm xử lý khi nhấn nút "Xóa"
@@ -227,7 +232,8 @@ export default function StaffManagement() {
                     required
                   />
                 </div>
-                <div className="md:col-span-2">
+                {/* Đặt trường "Mật khẩu" và "Vai trò" trong cùng một hàng */}
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Mật khẩu
                   </label>
@@ -242,6 +248,19 @@ export default function StaffManagement() {
                     }
                     required={!editingStaff}
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Vai trò
+                  </label>
+                  <select
+                    {...register("roleId")}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                    required
+                  >
+                    <option value="4">Staff</option>
+                    <option value="6">Kitchen Staff</option>
+                  </select>
                 </div>
               </div>
 
@@ -297,6 +316,10 @@ export default function StaffManagement() {
                             {staff.fullName}
                           </h3>
                           <p className="text-sm text-gray-500">{staff.email}</p>
+                          <p className="text-sm text-gray-500">
+                            Vai trò:{" "}
+                            {staff.roleId === 4 ? "Staff" : "Kitchen Staff"}
+                          </p>
                         </div>
                         <div className="flex space-x-2">
                           <button
