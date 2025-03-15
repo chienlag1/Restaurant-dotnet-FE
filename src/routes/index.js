@@ -23,12 +23,17 @@ import OrderCustomer from "../pages/staff/order";
 import Promotion from "../pages/admin/promotionManager";
 import PromotionForm from "../pages/admin/promotionManager/PromotionForm";
 import PromotionList from "../pages/admin/promotionManager/PromotionList";
+import PromotionView from "../pages/staff/promotion";
 
 const Routes = () => {
   const elements = useRoutes([
     {
       path: "/",
       element: <LayoutUser Page={HomePage} />,
+    },
+    {
+      path: "/promotion",
+      element: <LayoutStaff Page={PromotionView} />,
     },
     {
       path: "/order-customer",

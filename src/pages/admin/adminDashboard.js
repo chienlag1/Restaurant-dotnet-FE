@@ -204,6 +204,8 @@ const AdminDashboard = () => {
                       >
                         <option value="User">User</option>
                         <option value="Admin">Admin</option>
+                        <option value="Customer">Customer</option>
+                        <option value="KitchenStaff">KitchenStaff</option>
 
                         <option value="Staff">Staff</option>
                       </select>
