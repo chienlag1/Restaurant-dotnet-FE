@@ -74,10 +74,20 @@ const Order = () => {
         );
 
         const allStaff = response.data.$values || [];
-        setStaffList(allStaff.filter((staff) => staff.role !== "kitchen")); // Filter out kitchen staff
-        setKitchenStaffList(
-          allStaff.filter((staff) => staff.role === "kitchen")
-        ); // Only kitchen staff
+        setStaffList(allStaff.filter((staff) => staff.roleId === 4)); // Lọc nhân viên (roleId = 4)
+
+        // Now fetch kitchen staff separately
+        const kitchenStaffResponse = await axios.get(
+          "http://localhost:5112/api/staff/get-all-kitchen-staff", // Get kitchen staff
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const kitchenStaff = kitchenStaffResponse.data.$values || [];
+        setKitchenStaffList(kitchenStaff); // Lưu nhân viên bếp
       } catch (error) {
         console.error("Error fetching staff list:", error);
         setError("Không thể lấy danh sách nhân viên. Vui lòng thử lại sau.");
@@ -125,15 +135,13 @@ const Order = () => {
         ...orderDetails,
         customerName: orderDetails.customer.fullName,
         staffName: orderDetails.staff.fullName,
-        kitchenStaffId: orderDetails.kitchenStaff.staffId,
+        kitchenStaffId: orderDetails.kitchenStaff?.staffId || "",
       });
 
       setShowDetailModal(true);
     } catch (error) {
       console.error("Error fetching order details:", error);
-      setError(
-        "Không thể lấy thông tin chi tiết đơn hàng. Vui lòng thử lại sau."
-      );
+      setError("Không thể lấy thông tin chi tiết đơn hàng. Vui lòng thử lại sau.");
     }
   };
 
@@ -349,11 +357,15 @@ const Order = () => {
                   onChange={handleInputChange}
                   className="form-control"
                 >
-                  {kitchenStaffList.map((staff) => (
-                    <option key={staff.staffId} value={staff.staffId}>
-                      {staff.fullName}
-                    </option>
-                  ))}
+                  {kitchenStaffList.length > 0 ? (
+                    kitchenStaffList.map((staff) => (
+                      <option key={staff.staffId} value={staff.staffId}>
+                        {staff.fullName}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Không có nhân viên bếp</option>
+                  )}
                 </select>
               </div>
 
