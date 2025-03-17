@@ -15,6 +15,8 @@ import AdminDashboard from "../pages/admin/adminDashboard";
 import UserManager from "../pages/userManager/userManagement";
 import MenuManager from "../pages/menuManager/MenuManagement";
 import MenuListPage from "../pages/menuManager/MenuListPage";
+import OrderPaymentWrapper from '../components/OrderPayment';
+
 
 const Routes = () => {
   const elements = useRoutes([
@@ -64,6 +66,11 @@ const Routes = () => {
       path: "/menu",
       element: <LayoutUser Page={MenuListPage} />,
     },
+    // Thêm route cho thanh toán
+    {
+      path: "/payment/:orderId",
+      element: <OrderPaymentWrapper />, // Sử dụng OrderPaymentWrapper trực tiếp
+    }
   ]);
   return <div>{elements}</div>;
 };
