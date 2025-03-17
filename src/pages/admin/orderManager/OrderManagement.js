@@ -181,6 +181,40 @@ const Order = () => {
     }
   };
 
+  // Handle delete order
+  const handleDeleteOrder = async (orderId) => {
+    const confirmDelete = window.confirm(
+      "Bạn có chắc chắn muốn xoá đơn hàng này?"
+    );
+    if (!confirmDelete) return;
+
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setError("Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.");
+        navigate("/login");
+        return;
+      }
+
+      await axios.delete(
+        `http://localhost:5112/api/order/delete-order/${orderId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Cập nhật lại danh sách đơn hàng sau khi xóa
+      setOrders(orders.filter((order) => order.orderId !== orderId));
+      setSuccessMessage("Đơn hàng đã được xoá thành công!");
+      setShowDetailModal(false); // Đóng modal sau khi xóa
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      setError("Xoá đơn hàng thất bại. Vui lòng thử lại sau.");
+    }
+  };
+
   // Display loading spinner while data is being fetched
   if (loading) {
     return (
@@ -248,6 +282,9 @@ const Order = () => {
                     onClick={() => handleShowDetail(order.orderId)} // Gọi hàm hiển thị chi tiết
                   >
                     Chi tiết
+                  </button>
+                  <button className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Thanh Toán
                   </button>
                 </div>
               </div>
@@ -348,6 +385,12 @@ const Order = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
+          <Button
+            variant="danger"
+            onClick={() => handleDeleteOrder(editedOrderDetails.orderId)}
+          >
+            Xoá đơn hàng
+          </Button>
           <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
             Đóng
           </Button>
