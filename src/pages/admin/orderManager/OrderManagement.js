@@ -8,14 +8,13 @@ const Order = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [processingOrder, setProcessingOrder] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false); // State để quản lý modal chi tiết
-  const [orderDetails, setOrderDetails] = useState(null); // State để lưu thông tin chi tiết đơn hàng
+  const [editedOrderDetails, setEditedOrderDetails] = useState(null);
+  const [staffList, setStaffList] = useState([]); // All staff members
+  const [kitchenStaffList, setKitchenStaffList] = useState([]); // Kitchen staff only
+  const [showDetailModal, setShowDetailModal] = useState(false); // Modal visibility state
   const navigate = useNavigate();
 
-  // Lấy danh sách đơn hàng
+  // Fetch orders
   useEffect(() => {
     const fetchOrders = async () => {
       const token = localStorage.getItem("authToken");
@@ -35,7 +34,6 @@ const Order = () => {
           }
         );
 
-        console.log("Orders data:", response.data);
         setOrders(
           Array.isArray(response.data.$values) ? response.data.$values : []
         );
@@ -55,15 +53,9 @@ const Order = () => {
     fetchOrders();
   }, [navigate]);
 
-  // Xử lý xác nhận đơn hàng
-  const handleConfirmOrder = async () => {
-    if (!selectedOrder) return;
-
-    try {
-      setProcessingOrder(true);
-      setError(null);
-      setSuccessMessage(null);
-
+  // Fetch staff and kitchen staff list
+  useEffect(() => {
+    const fetchStaffList = async () => {
       const token = localStorage.getItem("authToken");
       if (!token) {
         setError("Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.");
@@ -71,37 +63,31 @@ const Order = () => {
         return;
       }
 
-      await axios.post(
-        `http://localhost:5112/api/order/confirm-order/${selectedOrder.orderId}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      try {
+        const response = await axios.get(
+          "http://localhost:5112/api/staff/get-all-staff", // Get all staff
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-      setSuccessMessage(
-        `Đơn hàng #${selectedOrder.orderId} đã được xác nhận thành công!`
-      );
-      setShowConfirmModal(false);
+        const allStaff = response.data.$values || [];
+        setStaffList(allStaff.filter((staff) => staff.role !== "kitchen")); // Filter out kitchen staff
+        setKitchenStaffList(
+          allStaff.filter((staff) => staff.role === "kitchen")
+        ); // Only kitchen staff
+      } catch (error) {
+        console.error("Error fetching staff list:", error);
+        setError("Không thể lấy danh sách nhân viên. Vui lòng thử lại sau.");
+      }
+    };
 
-      // Cập nhật lại danh sách đơn hàng
-      const updatedOrders = orders.map((order) =>
-        order.orderId === selectedOrder.orderId
-          ? { ...order, status: "Confirmed" }
-          : order
-      );
-      setOrders(updatedOrders);
-    } catch (error) {
-      console.error("Error confirming order:", error);
-      setError("Xác nhận đơn hàng thất bại. Vui lòng thử lại sau.");
-    } finally {
-      setProcessingOrder(false);
-    }
-  };
+    fetchStaffList();
+  }, [navigate]);
 
-  // Xử lý khi nhấn nút "Chi tiết"
+  // Show order details in the modal
   const handleShowDetail = async (orderId) => {
     try {
       const token = localStorage.getItem("authToken");
@@ -120,30 +106,82 @@ const Order = () => {
         }
       );
 
-      console.log("Order details:", response.data); // Log dữ liệu trả về
+      const orderItems = Array.isArray(response.data.orderItems?.$values)
+        ? response.data.orderItems.$values
+        : [];
 
-      // Đảm bảo orderItems luôn là một mảng
+      const totalAmount = orderItems.reduce(
+        (sum, item) => sum + item.totalPrice,
+        0
+      );
+
       const orderDetails = {
         ...response.data,
-        orderItems: Array.isArray(response.data.orderItems)
-          ? response.data.orderItems
-          : [],
+        orderItems,
+        totalAmount,
       };
 
-      setOrderDetails(orderDetails); // Lưu thông tin chi tiết đơn hàng
-      setShowDetailModal(true); // Hiển thị modal chi tiết
+      setEditedOrderDetails({
+        ...orderDetails,
+        customerName: orderDetails.customer.fullName,
+        staffName: orderDetails.staff.fullName,
+        kitchenStaffId: orderDetails.kitchenStaff.staffId,
+      });
+
+      setShowDetailModal(true);
     } catch (error) {
-      console.error(
-        "Error fetching order details:",
-        error.response?.data || error.message
-      );
+      console.error("Error fetching order details:", error);
       setError(
         "Không thể lấy thông tin chi tiết đơn hàng. Vui lòng thử lại sau."
       );
     }
   };
 
-  // Hiển thị loading khi đang tải dữ liệu
+  // Handle input change in the modal
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditedOrderDetails({
+      ...editedOrderDetails,
+      [name]: value,
+    });
+  };
+
+  // Save changes after editing
+  const handleSaveChanges = async () => {
+    if (!editedOrderDetails) return;
+
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setError("Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.");
+        navigate("/login");
+        return;
+      }
+
+      await axios.put(
+        `http://localhost:5112/api/order/update-order/${editedOrderDetails.orderId}`,
+        {
+          customerName: editedOrderDetails.customerName,
+          staffName: editedOrderDetails.staffName,
+          kitchenStaffId: editedOrderDetails.kitchenStaffId,
+          orderItems: editedOrderDetails.orderItems,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setSuccessMessage("Đơn hàng đã được cập nhật thành công!");
+      setShowDetailModal(false);
+    } catch (error) {
+      console.error("Error updating order:", error);
+      setError("Cập nhật đơn hàng thất bại. Vui lòng thử lại sau.");
+    }
+  };
+
+  // Display loading spinner while data is being fetched
   if (loading) {
     return (
       <div className="container mx-auto p-4 text-center">
@@ -161,7 +199,6 @@ const Order = () => {
         Danh Sách Đơn Hàng
       </h2>
 
-      {/* Hiển thị thông báo thành công */}
       {successMessage && (
         <Alert
           variant="success"
@@ -173,7 +210,6 @@ const Order = () => {
         </Alert>
       )}
 
-      {/* Hiển thị thông báo lỗi */}
       {error && (
         <Alert
           variant="danger"
@@ -185,12 +221,11 @@ const Order = () => {
         </Alert>
       )}
 
-      {/* Danh sách đơn hàng */}
       {orders.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {orders.map((order) => (
             <div
-              key={order.orderId}
+              key={order.orderId} // Ensure a unique key is used for each list item
               className="bg-white shadow-lg rounded-lg overflow-hidden"
             >
               <div className="bg-blue-600 text-white p-4">
@@ -214,15 +249,6 @@ const Order = () => {
                   >
                     Chi tiết
                   </button>
-                  <button
-                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                    onClick={() => {
-                      setSelectedOrder(order);
-                      setShowConfirmModal(true);
-                    }}
-                  >
-                    Xác nhận
-                  </button>
                 </div>
               </div>
             </div>
@@ -234,101 +260,88 @@ const Order = () => {
         </div>
       )}
 
-      {/* Modal xác nhận đơn hàng */}
-      <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Xác nhận đơn hàng</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>
-            Bạn có chắc chắn muốn xác nhận đơn hàng #{selectedOrder?.orderId}?
-          </p>
-          {selectedOrder && (
-            <div className="mt-4">
-              <h6 className="font-bold">Chi tiết đơn hàng:</h6>
-              <p>
-                <strong>Khách hàng:</strong> {selectedOrder.customerName}
-              </p>
-              <p>
-                <strong>Nhân viên:</strong> {selectedOrder.staffName}
-              </p>
-              <p>
-                <strong>Ngày đặt:</strong>{" "}
-                {new Date(selectedOrder.orderDate).toLocaleString()}
-              </p>
-            </div>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setShowConfirmModal(false)}
-            disabled={processingOrder}
-          >
-            Hủy
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleConfirmOrder}
-            disabled={processingOrder}
-          >
-            {processingOrder ? (
-              <>
-                <Spinner animation="border" size="sm" className="mr-2" />
-                Đang xử lý...
-              </>
-            ) : (
-              "Xác nhận"
-            )}
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
       {/* Modal chi tiết đơn hàng */}
       <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Chi tiết đơn hàng</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {orderDetails ? (
+          {editedOrderDetails ? (
             <>
               <p>
-                <strong>ID đơn hàng:</strong> {orderDetails.orderId}
+                <strong>ID đơn hàng:</strong> {editedOrderDetails.orderId}
               </p>
-              <p>
-                <strong>Khách hàng:</strong> {orderDetails.customerName}
-              </p>
-              <p>
-                <strong>Nhân viên:</strong> {orderDetails.staffName}
-              </p>
-              <p>
-                <strong>Nhân viên bếp:</strong> {orderDetails.kitchenStaffName}
-              </p>
-              <p>
-                <strong>Ngày đặt:</strong>{" "}
-                {new Date(orderDetails.orderDate).toLocaleString()}
-              </p>
+              <div>
+                <label>
+                  <strong>Khách hàng:</strong>
+                </label>
+                <input
+                  type="text"
+                  name="customerName"
+                  value={editedOrderDetails.customerName}
+                  onChange={handleInputChange}
+                  className="form-control"
+                />
+              </div>
+
+              <div>
+                <label>
+                  <strong>Nhân viên:</strong>
+                </label>
+                <select
+                  name="staffName"
+                  value={editedOrderDetails.staffName}
+                  onChange={handleInputChange}
+                  className="form-control"
+                >
+                  {staffList.map((staff) => (
+                    <option key={staff.staffId} value={staff.fullName}>
+                      {staff.fullName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label>
+                  <strong>Nhân viên bếp:</strong>
+                </label>
+                <select
+                  name="kitchenStaffId"
+                  value={editedOrderDetails.kitchenStaffId}
+                  onChange={handleInputChange}
+                  className="form-control"
+                >
+                  {kitchenStaffList.map((staff) => (
+                    <option key={staff.staffId} value={staff.staffId}>
+                      {staff.fullName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <h6 className="font-bold mt-4">Danh sách món ăn:</h6>
               <ul>
-                {Array.isArray(orderDetails.orderItems) &&
-                  orderDetails.orderItems.map((item) => (
-                    <li key={item.orderItemId} className="mb-2">
-                      <p>
-                        <strong>Tên món:</strong> {item.menuItemName}
-                      </p>
-                      <p>
-                        <strong>Giá:</strong> {item.price.toLocaleString()} VND
-                      </p>
-                      <p>
-                        <strong>Số lượng:</strong> {item.quantity}
-                      </p>
-                      <p>
-                        <strong>Tổng tiền:</strong>{" "}
-                        {item.totalPrice.toLocaleString()} VND
-                      </p>
-                    </li>
-                  ))}
+                {editedOrderDetails.orderItems.map((item) => (
+                  <li key={item.orderItemId} className="mb-2">
+                    <p>
+                      <strong>Tên món:</strong> {item.menuItem.name}
+                    </p>
+                    <p>
+                      <strong>Giá:</strong>{" "}
+                      {item.menuItem.price?.toLocaleString() || "0"} VND
+                    </p>
+                    <p>
+                      <strong>Số lượng:</strong> {item.quantity}
+                    </p>
+                  </li>
+                ))}
               </ul>
+
+              <p className="font-bold mt-4">
+                <strong>Tổng tiền đơn hàng:</strong>{" "}
+                {editedOrderDetails.totalAmount?.toLocaleString() || "0"} VND
+              </p>
             </>
           ) : (
             <p>Đang tải thông tin chi tiết...</p>
@@ -337,6 +350,9 @@ const Order = () => {
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
             Đóng
+          </Button>
+          <Button variant="primary" onClick={handleSaveChanges}>
+            Lưu thay đổi
           </Button>
         </Modal.Footer>
       </Modal>
