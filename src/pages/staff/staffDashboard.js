@@ -3,8 +3,8 @@ import axios from "axios";
 import TableItem from "../../components/tableItem/index.js";
 import { motion } from "framer-motion";
 import "bootstrap/dist/css/bootstrap.min.css";
-
 import { useNavigate } from "react-router";
+
 export default function StaffDashboard() {
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,6 +12,7 @@ export default function StaffDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
   const navigate = useNavigate();
+
   useEffect(() => {
     const fetchTables = async () => {
       try {
@@ -32,16 +33,27 @@ export default function StaffDashboard() {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
-            withCredentials: true, // Ensure credentials are sent
+            withCredentials: true,
           }
         );
 
-        const fetchedTables = response.data.tables?.$values || [];
+        let fetchedTables = []; // ✅ Khai báo biến trước
 
-        if (!Array.isArray(fetchedTables)) {
-          throw new Error("Dữ liệu không hợp lệ, không phải array");
+        if (response.data.tables && Array.isArray(response.data.tables.$values)) {
+          fetchedTables = response.data.tables.$values.map((table, index) => ({
+            ...table,
+            tableNumber: index + 1, // ✅ Đồng bộ số bàn theo AdminDashboard
+            status: table.status.toLowerCase() === "available" || table.status.toLowerCase() === "còn trống"
+              ? "Còn trống"
+              : "Đã đặt bàn", // ✅ Đồng bộ trạng thái bàn
+          }));
         }
 
+        if (!Array.isArray(fetchedTables) || fetchedTables.length === 0) {
+          throw new Error("Dữ liệu không hợp lệ, không phải array hoặc rỗng");
+        }
+
+        console.log("📌 StaffDashboard - Dữ liệu bàn:", fetchedTables);
         setTables(fetchedTables);
         setLoading(false);
       } catch (error) {
@@ -69,11 +81,11 @@ export default function StaffDashboard() {
   }, []);
 
   const handleTableClick = (table) => {
-    if (table.status !== "Available") return;
+    if (table.status !== "Còn trống") return;
 
     // Hiển thị thông báo xác nhận
     const confirmSelection = window.confirm(
-      `Bạn có chắc chắn muốn chọn bàn ${table.tableId} không?`
+      `Bạn có chắc chắn muốn chọn bàn ${table.tableNumber} không?`
     );
 
     if (confirmSelection) {
@@ -87,8 +99,6 @@ export default function StaffDashboard() {
 
   // Tính toán số lượng trang
   const totalPages = Math.ceil(tables.length / itemsPerPage);
-
-  // Lấy các card cho trang hiện tại
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentTables = tables.slice(indexOfFirstItem, indexOfLastItem);
@@ -108,7 +118,7 @@ export default function StaffDashboard() {
         <>
           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3">
             {currentTables.map((table) => (
-              <div key={table.tableId} className="col-md-4">
+              <div key={table.tableNumber} className="col-md-4">
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
