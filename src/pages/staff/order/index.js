@@ -248,7 +248,7 @@ const OrderCustomer = () => {
         tableId: parseInt(tableId),
       };
 
-      console.log("Order Data:", orderData); // Log dữ liệu đơn hàng
+      console.log("Order Data:", orderData);
 
       const response = await axios.post(
         "http://localhost:5112/api/order/create-order",

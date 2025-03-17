@@ -3,16 +3,12 @@ import axios from "axios";
 import TableItem from "../../components/tableItem/index.js";
 import { motion } from "framer-motion";
 import "bootstrap/dist/css/bootstrap.min.css";
-import Modal from "react-bootstrap/Modal";
-import Button from "react-bootstrap/Button";
+
 import { useNavigate } from "react-router";
 export default function StaffDashboard() {
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedTable, setSelectedTable] = useState(null);
-  const [menuItems, setMenuItems] = useState([]);
-  const [showMenuModal, setShowMenuModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
   const navigate = useNavigate();
@@ -84,22 +80,8 @@ export default function StaffDashboard() {
       // Lưu thông tin bàn vào localStorage
       localStorage.setItem("selectedTable", JSON.stringify(table));
 
-      // Cập nhật state selectedTable
-      setSelectedTable(table);
-
       // Chuyển hướng sang trang Menu
       navigate("/menu-customer");
-    }
-  };
-  const handleShowMenu = async () => {
-    try {
-      const response = await axios.get(
-        "http://localhost:5112/api/menuitem/get-all-menuitems"
-      );
-      setMenuItems(response.data);
-      setShowMenuModal(true);
-    } catch (error) {
-      console.error("Lỗi khi tải menu:", error);
     }
   };
 
@@ -191,45 +173,6 @@ export default function StaffDashboard() {
       ) : (
         <p className="text-center">Không có bàn nào để hiển thị.</p>
       )}
-
-      {selectedTable && (
-        <div className="fixed-bottom p-4 bg-light shadow-lg text-center rounded-top border-top border-primary">
-          <h2 className="text-lg font-bold">
-            Đặt món cho Bàn {selectedTable.tableId}
-          </h2>
-          <button
-            className="btn btn-primary mt-3 px-4 py-2"
-            onClick={handleShowMenu}
-          >
-            Đặt món ngay
-          </button>
-        </div>
-      )}
-
-      {/* Modal hiển thị danh sách món ăn */}
-      <Modal show={showMenuModal} onHide={() => setShowMenuModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Danh sách món ăn</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {menuItems.length > 0 ? (
-            <ul className="list-group">
-              {menuItems.map((item) => (
-                <li key={item.menuItemId} className="list-group-item">
-                  {item.name} - {item.price}đ
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>Không có món ăn nào.</p>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowMenuModal(false)}>
-            Đóng
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 }

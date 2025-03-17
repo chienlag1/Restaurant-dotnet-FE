@@ -11,6 +11,8 @@ const Order = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [processingOrder, setProcessingOrder] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false); // State để quản lý modal chi tiết
+  const [orderDetails, setOrderDetails] = useState(null); // State để lưu thông tin chi tiết đơn hàng
   const navigate = useNavigate();
 
   // Lấy danh sách đơn hàng
@@ -69,7 +71,6 @@ const Order = () => {
         return;
       }
 
-      // Xóa biến response vì không sử dụng
       await axios.post(
         `http://localhost:5112/api/order/confirm-order/${selectedOrder.orderId}`,
         {},
@@ -99,6 +100,49 @@ const Order = () => {
       setProcessingOrder(false);
     }
   };
+
+  // Xử lý khi nhấn nút "Chi tiết"
+  const handleShowDetail = async (orderId) => {
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setError("Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.");
+        navigate("/login");
+        return;
+      }
+
+      const response = await axios.get(
+        `http://localhost:5112/api/order/get-order-by-id/${orderId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("Order details:", response.data); // Log dữ liệu trả về
+
+      // Đảm bảo orderItems luôn là một mảng
+      const orderDetails = {
+        ...response.data,
+        orderItems: Array.isArray(response.data.orderItems)
+          ? response.data.orderItems
+          : [],
+      };
+
+      setOrderDetails(orderDetails); // Lưu thông tin chi tiết đơn hàng
+      setShowDetailModal(true); // Hiển thị modal chi tiết
+    } catch (error) {
+      console.error(
+        "Error fetching order details:",
+        error.response?.data || error.message
+      );
+      setError(
+        "Không thể lấy thông tin chi tiết đơn hàng. Vui lòng thử lại sau."
+      );
+    }
+  };
+
   // Hiển thị loading khi đang tải dữ liệu
   if (loading) {
     return (
@@ -166,6 +210,12 @@ const Order = () => {
                 <div className="flex justify-between mt-4">
                   <button
                     className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    onClick={() => handleShowDetail(order.orderId)} // Gọi hàm hiển thị chi tiết
+                  >
+                    Chi tiết
+                  </button>
+                  <button
+                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
                     onClick={() => {
                       setSelectedOrder(order);
                       setShowConfirmModal(true);
@@ -230,6 +280,63 @@ const Order = () => {
             ) : (
               "Xác nhận"
             )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal chi tiết đơn hàng */}
+      <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Chi tiết đơn hàng</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {orderDetails ? (
+            <>
+              <p>
+                <strong>ID đơn hàng:</strong> {orderDetails.orderId}
+              </p>
+              <p>
+                <strong>Khách hàng:</strong> {orderDetails.customerName}
+              </p>
+              <p>
+                <strong>Nhân viên:</strong> {orderDetails.staffName}
+              </p>
+              <p>
+                <strong>Nhân viên bếp:</strong> {orderDetails.kitchenStaffName}
+              </p>
+              <p>
+                <strong>Ngày đặt:</strong>{" "}
+                {new Date(orderDetails.orderDate).toLocaleString()}
+              </p>
+              <h6 className="font-bold mt-4">Danh sách món ăn:</h6>
+              <ul>
+                {Array.isArray(orderDetails.orderItems) &&
+                  orderDetails.orderItems.map((item) => (
+                    <li key={item.orderItemId} className="mb-2">
+                      <p>
+                        <strong>Tên món:</strong> {item.menuItemName}
+                      </p>
+                      <p>
+                        <strong>Giá:</strong> {item.price.toLocaleString()} VND
+                      </p>
+                      <p>
+                        <strong>Số lượng:</strong> {item.quantity}
+                      </p>
+                      <p>
+                        <strong>Tổng tiền:</strong>{" "}
+                        {item.totalPrice.toLocaleString()} VND
+                      </p>
+                    </li>
+                  ))}
+              </ul>
+            </>
+          ) : (
+            <p>Đang tải thông tin chi tiết...</p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+            Đóng
           </Button>
         </Modal.Footer>
       </Modal>
