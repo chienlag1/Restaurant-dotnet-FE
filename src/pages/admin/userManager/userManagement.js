@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Modal, Button, Form } from "react-bootstrap";
+import { Button } from "react-bootstrap";
 import AddUser from "./addUserManagement";
+import Pagination from "../../../components/pagination";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -15,11 +16,6 @@ const UserManagement = () => {
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const handleShowAddUserModal = () => setShowAddUserModal(true);
   const handleCloseAddUserModal = () => setShowAddUserModal(false);
-
-  // Modal Reset Password
-  const [showModal, setShowModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -39,73 +35,20 @@ const UserManagement = () => {
         setUsers(response.data.$values || []);
         setLoading(false);
       } catch (error) {
-        setError("Lỗi khi tải danh sách người dùng. Vui lòng thử lại.");
+        console.error("Lỗi khi tải danh sách người dùng:", error);
+
+        if (error.response?.status === 401) {
+          console.warn("Token có thể đã hết hạn, đăng xuất người dùng.");
+          localStorage.removeItem("authToken");
+          window.location.href = "/login";
+        } else {
+          setError("Lỗi khi tải danh sách người dùng. Vui lòng thử lại.");
+        }
         setLoading(false);
       }
     };
     fetchUsers();
   }, []);
-
-  const getRoleName = (roleId) => {
-    switch (roleId) {
-      case 1:
-        return "User";
-      case 2:
-        return "Admin";
-      case 3:
-        return "Manager";
-      case 4:
-        return "Staff";
-      case 5:
-        return "Customer";
-      case 6:
-        return "KitchenStaff";
-      default:
-        return "Unknown";
-    }
-  };
-
-  const handleResetPassword = (user) => {
-    console.log("User selected for reset:", user); // Kiểm tra dữ liệu user khi click
-    setSelectedUser(user);
-    setShowModal(true);
-  };
-
-  const handleSavePassword = async () => {
-    if (!newPassword) {
-      alert("Vui lòng nhập mật khẩu mới");
-      return;
-    }
-
-    if (!selectedUser || !selectedUser.userId) {
-      // Sử dụng userId thay vì id
-      alert("Lỗi: Không tìm thấy người dùng. Vui lòng thử lại!");
-      console.error("Lỗi: selectedUser không hợp lệ", selectedUser);
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem("authToken");
-      const requestData = {
-        userId: selectedUser.userId, // Sử dụng userId
-        newPassword: newPassword,
-      };
-
-      console.log("Dữ liệu gửi lên:", requestData);
-
-      await axios.post(
-        "http://localhost:5112/api/admin/reset-password",
-        requestData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      alert("Mật khẩu đã được cập nhật!");
-      setShowModal(false);
-      setNewPassword("");
-    } catch (error) {
-      alert("Lỗi khi đặt lại mật khẩu!");
-    }
-  };
 
   const handleAddUser = async (newUser) => {
     if (!newUser.email || !newUser.fullName || !newUser.password) {
@@ -134,6 +77,7 @@ const UserManagement = () => {
 
       setUsers([...users, response.data]);
       alert("Thêm khách hàng thành công!");
+      handleCloseAddUserModal();
     } catch (error) {
       console.error("Error response:", error.response);
 
@@ -155,147 +99,204 @@ const UserManagement = () => {
         user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
 
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
   return (
-    <div className="container mt-4">
-      <p className="fs-5">Danh Sách Khách Hàng:</p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-gray-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-white shadow-lg rounded-2xl p-8 mb-8">
+          <h2 className="text-3xl font-bold text-center text-indigo-700 mb-2">
+            Quản Lí Khách Hàng
+          </h2>
+          <div className="w-24 h-1 mx-auto bg-indigo-500 mb-6 rounded-full"></div>
+          <p className="text-lg text-gray-600 text-center mb-8">
+            Quản lý danh sách khách hàng của bạn
+          </p>
 
-      {loading && <p>Loading users...</p>}
-      {error && <p className="text-danger">{error}</p>}
+          {loading && (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+          )}
 
-      {!loading && !error && (
-        <>
-          <div className="flex justify-end mb-3"></div>
-          <div className="flex justify-end mb-3">
-            <Button
-              className="btn btn-primary"
-              onClick={handleShowAddUserModal}
-            >
-              Thêm Khách Hàng
-            </Button>
-          </div>
-          <div className="d-flex justify-content-between mb-3">
-            <input
-              type="text"
-              className="form-control w-25"
-              placeholder="🔍 Tìm kiếm theo tên hoặc email"
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          <div className="table-responsive">
-            <table className="table table-light table-hover text-center">
-              <thead>
-                <tr className="table-primary">
-                  <th>Email</th>
-                  <th>Name</th>
-                  <th>Role</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentUsers.map((user, index) => (
-                  <tr key={index}>
-                    <td>{user.email}</td>
-                    <td>{user.fullName}</td>
-                    <td>
-                      <span
-                        className={`badge ${
-                          user.roleId === 5 ? "bg-info" : "bg-warning"
-                        } text-dark`}
-                      >
-                        {getRoleName(user.roleId)}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        className="btn btn-danger"
-                        onClick={() => handleResetPassword(user)}
-                      >
-                        Reset Password
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <nav>
-            <ul className="pagination justify-content-center">
-              <li
-                className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
-              >
-                <button
-                  className="page-link"
-                  onClick={() => setCurrentPage(currentPage - 1)}
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded mb-6 shadow-sm">
+              <div className="flex items-center">
+                <svg
+                  className="h-6 w-6 text-red-500 mr-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
-                  Previous
-                </button>
-              </li>
-              {Array.from({ length: totalPages }, (_, index) => (
-                <li
-                  key={index}
-                  className={`page-item ${
-                    currentPage === index + 1 ? "active" : ""
-                  }`}
-                >
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage(index + 1)}
-                  >
-                    {index + 1}
-                  </button>
-                </li>
-              ))}
-              <li
-                className={`page-item ${
-                  currentPage === totalPages ? "disabled" : ""
-                }`}
-              >
-                <button
-                  className="page-link"
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </button>
-              </li>
-            </ul>
-          </nav>
-        </>
-      )}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <p>{error}</p>
+              </div>
+            </div>
+          )}
 
-      {/* Modal for Reset Password */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Reset Password</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>New Password</Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Enter new password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Close
-          </Button>
-          <Button variant="primary" onClick={handleSavePassword}>
-            Save Password
-          </Button>
-        </Modal.Footer>
-      </Modal>
+          {!loading && !error && (
+            <>
+              <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+                <Button
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200 shadow-md hover:shadow-lg w-full sm:w-auto"
+                  onClick={handleShowAddUserModal}
+                >
+                  <span className="flex items-center justify-center">
+                    <svg
+                      className="w-5 h-5 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      ></path>
+                    </svg>
+                    Thêm Khách Hàng
+                  </span>
+                </Button>
+
+                <div className="relative w-full sm:w-64">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg
+                      className="h-5 w-5 text-gray-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Tìm kiếm theo tên hoặc email"
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gradient-to-r from-indigo-500 to-indigo-600">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
+                          Email
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
+                          Tên Khách Hàng
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {currentUsers.length > 0 ? (
+                        currentUsers.map((user, index) => (
+                          <tr
+                            key={index}
+                            className="hover:bg-indigo-50 transition-colors duration-150"
+                          >
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 h-8 w-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                                  <span className="text-indigo-600 font-medium">
+                                    {user.fullName?.charAt(0) || "U"}
+                                  </span>
+                                </div>
+                                <div className="ml-4">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {user.email}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                              {user.fullName}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan="2"
+                            className="px-6 py-12 text-center text-gray-500"
+                          >
+                            <svg
+                              className="mx-auto h-12 w-12 text-gray-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                              ></path>
+                            </svg>
+                            <p className="mt-2 text-lg">
+                              Không tìm thấy khách hàng nào
+                            </p>
+                            <p className="mt-1">
+                              Thử thay đổi tìm kiếm hoặc thêm khách hàng mới
+                            </p>
+                          </td>
+                        </tr>
+                      )}
+                      {currentUsers.length > 0 &&
+                        currentUsers.length < usersPerPage &&
+                        [...Array(usersPerPage - currentUsers.length)].map(
+                          (_, index) => (
+                            <tr key={`empty-${index}`}>
+                              <td colSpan="2" className="px-6 py-4">
+                                &nbsp;
+                              </td>
+                            </tr>
+                          )
+                        )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="mt-8">
+                {/* New Pagination component */}
+                <Pagination
+                  totalItems={filteredUsers.length}
+                  itemsPerPage={usersPerPage}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+
+              <div className="mt-6 text-center text-sm text-gray-500">
+                Hiển thị {currentUsers.length} trên tổng số{" "}
+                {filteredUsers.length} khách hàng
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
       <AddUser
         showModal={showAddUserModal}
         handleCloseModal={handleCloseAddUserModal}

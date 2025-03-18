@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { useAuth } from "../../../context/AuthContext";
+import Pagination from "../../../components/pagination";
 
 export default function StaffManagement() {
   const { user } = useAuth();
@@ -130,58 +131,6 @@ export default function StaffManagement() {
     setCurrentPage(pageNumber);
   };
 
-  // Component phân trang từ AdminDashboard
-  const Pagination = () => {
-    const totalPages = Math.ceil(filteredStaffList.length / itemsPerPage);
-
-    return (
-      <nav>
-        <ul className="pagination justify-content-center">
-          {/* Nút Previous */}
-          <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-            <button
-              className="page-link"
-              onClick={() => handlePageChange(currentPage - 1)}
-            >
-              Previous
-            </button>
-          </li>
-
-          {/* Các nút trang */}
-          {Array.from({ length: totalPages }, (_, index) => (
-            <li
-              key={index}
-              className={`page-item ${
-                currentPage === index + 1 ? "active" : ""
-              }`}
-            >
-              <button
-                className="page-link"
-                onClick={() => handlePageChange(index + 1)}
-              >
-                {index + 1}
-              </button>
-            </li>
-          ))}
-
-          {/* Nút Next */}
-          <li
-            className={`page-item ${
-              currentPage === totalPages ? "disabled" : ""
-            }`}
-          >
-            <button
-              className="page-link"
-              onClick={() => handlePageChange(currentPage + 1)}
-            >
-              Next
-            </button>
-          </li>
-        </ul>
-      </nav>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-gray-100 py-8">
       <div className="max-w-4xl mx-auto">
@@ -232,7 +181,6 @@ export default function StaffManagement() {
                     required
                   />
                 </div>
-                {/* Đặt trường "Mật khẩu" và "Vai trò" trong cùng một hàng */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Mật khẩu
@@ -340,10 +288,12 @@ export default function StaffManagement() {
                   ))}
                 </div>
                 {/* Phân trang */}
-                <div style={{ marginTop: "16px" }}>
-                  {" "}
-                  {/* Thêm margin-top */}
-                  <Pagination />
+                <div className="mt-6">
+                  <Pagination
+                    totalItems={filteredStaffList.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={handlePageChange}
+                  />
                 </div>
               </div>
             ) : (

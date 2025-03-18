@@ -9,8 +9,8 @@ export default function StaffDashboard() {
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const [currentPage, setCurrentPage] = useState(1); // 🆕 Trang hiện tại
+  const itemsPerPage = 8; // 🆕 Số bàn hiển thị trên mỗi trang
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,13 +39,18 @@ export default function StaffDashboard() {
 
         let fetchedTables = []; // ✅ Khai báo biến trước
 
-        if (response.data.tables && Array.isArray(response.data.tables.$values)) {
+        if (
+          response.data.tables &&
+          Array.isArray(response.data.tables.$values)
+        ) {
           fetchedTables = response.data.tables.$values.map((table, index) => ({
             ...table,
             tableNumber: index + 1, // ✅ Đồng bộ số bàn theo AdminDashboard
-            status: table.status.toLowerCase() === "available" || table.status.toLowerCase() === "còn trống"
-              ? "Còn trống"
-              : "Đã đặt bàn", // ✅ Đồng bộ trạng thái bàn
+            status:
+              table.status.toLowerCase() === "available" ||
+              table.status.toLowerCase() === "còn trống"
+                ? "Còn trống"
+                : "Đã đặt bàn", // ✅ Đồng bộ trạng thái bàn
           }));
         }
 
@@ -97,13 +102,13 @@ export default function StaffDashboard() {
     }
   };
 
-  // Tính toán số lượng trang
+  // 🆕 Tính toán số lượng trang
   const totalPages = Math.ceil(tables.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentTables = tables.slice(indexOfFirstItem, indexOfLastItem);
 
-  // Hàm chuyển trang
+  // 🆕 Hàm chuyển trang
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
@@ -132,7 +137,7 @@ export default function StaffDashboard() {
             ))}
           </div>
 
-          {/* Phân trang */}
+          {/* 🆕 Phân trang */}
           <div className="flex justify-center mt-6">
             <nav className="block">
               <ul className="flex pl-0 rounded list-none flex-wrap">

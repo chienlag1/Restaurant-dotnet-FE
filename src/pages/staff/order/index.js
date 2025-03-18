@@ -520,7 +520,7 @@ const OrderCustomer = () => {
                   }
                   className="w-full p-2 border rounded"
                 >
-                  <option value="">-- Chọn khách hàng --</option>
+                  <option value="">Chọn khách hàng </option>
                   {filteredCustomers.map((customer) => (
                     <option key={customer.userId} value={customer.userId}>
                       {customer.fullName} ({customer.phone || "Không có SĐT"})
@@ -535,6 +535,7 @@ const OrderCustomer = () => {
               <label className="block text-gray-700 mb-2">
                 Chọn nhân viên bếp
               </label>
+
               {fetchingStaff ? (
                 <div className="text-center p-2">
                   <Spinner animation="border" size="sm" />

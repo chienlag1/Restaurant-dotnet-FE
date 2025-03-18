@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Modal, Button, Spinner, Alert } from "react-bootstrap";
+import Pagination from "../../../components/pagination";
 
 const Order = () => {
   const [orders, setOrders] = useState([]);
@@ -9,10 +10,24 @@ const Order = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [editedOrderDetails, setEditedOrderDetails] = useState(null);
-  const [staffList, setStaffList] = useState([]); // All staff members
-  const [kitchenStaffList, setKitchenStaffList] = useState([]); // Kitchen staff only
-  const [showDetailModal, setShowDetailModal] = useState(false); // Modal visibility state
+  const [staffList, setStaffList] = useState([]);
+  const [kitchenStaffList, setKitchenStaffList] = useState([]);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const navigate = useNavigate();
+
+  // State và logic phân trang
+  const [currentPage, setCurrentPage] = useState(1); // State cho trang hiện tại
+  const itemsPerPage = 6; // Số lượng đơn hàng hiển thị trên mỗi trang
+
+  // Tính toán danh sách đơn hàng hiển thị trên trang hiện tại
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentOrders = orders.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Hàm xử lý khi chuyển trang
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
 
   // Fetch orders
   useEffect(() => {
@@ -129,29 +144,42 @@ const Order = () => {
         ...response.data,
         orderItems,
         totalAmount,
+        customerId: response.data.customer?.customerId || null, // Đảm bảo customerId được lấy từ dữ liệu
+        staffId: response.data.staff?.staffId || null, // Đảm bảo staffId được lấy từ dữ liệu
+        kitchenStaffId: response.data.kitchenStaff?.kitchenStaffId || null, // Đảm bảo kitchenStaffId được lấy từ dữ liệu
       };
 
       setEditedOrderDetails({
         ...orderDetails,
         customerName: orderDetails.customer.fullName,
         staffName: orderDetails.staff.fullName,
-        kitchenStaffId: orderDetails.kitchenStaff?.staffId || "",
       });
 
       setShowDetailModal(true);
     } catch (error) {
       console.error("Error fetching order details:", error);
-      setError("Không thể lấy thông tin chi tiết đơn hàng. Vui lòng thử lại sau.");
+      setError(
+        "Không thể lấy thông tin chi tiết đơn hàng. Vui lòng thử lại sau."
+      );
     }
   };
 
   // Handle input change in the modal
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
     setEditedOrderDetails({
       ...editedOrderDetails,
       [name]: value,
     });
+
+    // Cập nhật lại customerId nếu thay đổi
+    if (name === "customerId") {
+      setEditedOrderDetails({
+        ...editedOrderDetails,
+        customerId: value, // Cập nhật lại customerId
+      });
+    }
   };
 
   // Save changes after editing
@@ -166,14 +194,30 @@ const Order = () => {
         return;
       }
 
+      // Kiểm tra và đảm bảo customerId không bị null
+      if (!editedOrderDetails.customerId) {
+        setError("Khách hàng không hợp lệ. Vui lòng kiểm tra lại.");
+        return;
+      }
+
+      // Tạo payload đúng với yêu cầu của API
+      const payload = {
+        customerId: editedOrderDetails.customerId, // Đảm bảo customerId có giá trị hợp lệ
+        orderItems: editedOrderDetails.orderItems.map((item) => ({
+          menuItemId: item.menuItem.menuItemId,
+          quantity: item.quantity,
+        })),
+        kitchenStaffId: editedOrderDetails.kitchenStaffId || null, // Nếu không có nhân viên bếp, set là null
+        staffId: editedOrderDetails.staffId || null, // Nếu không có nhân viên, set là null
+        status: editedOrderDetails.status || "Pending", // Mặc định là "Pending"
+        orderDate: new Date(editedOrderDetails.orderDate).toISOString(),
+      };
+
+      console.log("Payload gửi lên server:", payload); // Kiểm tra payload trước khi gửi
+
       await axios.put(
         `http://localhost:5112/api/order/update-order/${editedOrderDetails.orderId}`,
-        {
-          customerName: editedOrderDetails.customerName,
-          staffName: editedOrderDetails.staffName,
-          kitchenStaffId: editedOrderDetails.kitchenStaffId,
-          orderItems: editedOrderDetails.orderItems,
-        },
+        payload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -185,6 +229,9 @@ const Order = () => {
       setShowDetailModal(false);
     } catch (error) {
       console.error("Error updating order:", error);
+      if (error.response) {
+        console.error("Phản hồi từ server:", error.response.data);
+      }
       setError("Cập nhật đơn hàng thất bại. Vui lòng thử lại sau.");
     }
   };
@@ -264,41 +311,57 @@ const Order = () => {
       )}
 
       {orders.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {orders.map((order) => (
-            <div
-              key={order.orderId} // Ensure a unique key is used for each list item
-              className="bg-white shadow-lg rounded-lg overflow-hidden"
-            >
-              <div className="bg-blue-600 text-white p-4">
-                <h3 className="text-lg font-bold">Đơn hàng #{order.orderId}</h3>
-              </div>
-              <div className="p-4">
-                <p className="text-gray-700 mb-1">
-                  <strong>Khách hàng:</strong> {order.customerName}
-                </p>
-                <p className="text-gray-700 mb-1">
-                  <strong>Nhân viên:</strong> {order.staffName}
-                </p>
-                <p className="text-gray-700 mb-3">
-                  <strong>Ngày đặt:</strong>{" "}
-                  {new Date(order.orderDate).toLocaleString()}
-                </p>
-                <div className="flex justify-between mt-4">
-                  <button
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                    onClick={() => handleShowDetail(order.orderId)} // Gọi hàm hiển thị chi tiết
-                  >
-                    Chi tiết
-                  </button>
-                  <button className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-                    Thanh Toán
-                  </button>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {currentOrders.map((order) => (
+              <div
+                key={order.orderId} // Use orderId as the unique key
+                className="bg-white shadow-lg rounded-lg overflow-hidden"
+              >
+                <div className="bg-blue-600 text-white p-4">
+                  <h3 className="text-lg font-bold">
+                    Đơn hàng #{order.orderId}
+                  </h3>
+                </div>
+                <div className="p-4">
+                  <p className="text-gray-700 mb-1">
+                    <strong>Khách hàng:</strong> {order.customerName}
+                  </p>
+                  <p className="text-gray-700 mb-1">
+                    <strong>Nhân viên:</strong> {order.staffName}
+                  </p>
+                  <p className="text-gray-700 mb-3">
+                    <strong>Ngày đặt:</strong>{" "}
+                    {new Date(order.orderDate).toLocaleString()}
+                  </p>
+                  <div className="flex justify-between mt-4">
+                    <button
+                      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                      onClick={() => handleShowDetail(order.orderId)}
+                    >
+                      Chi tiết
+                    </button>
+                    <Button
+                      variant="danger"
+                      onClick={() => handleDeleteOrder(order.orderId)}
+                    >
+                      Xoá đơn hàng
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          {/* Phân trang */}
+          <div className="mt-6">
+            <Pagination
+              totalItems={orders.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        </>
       ) : (
         <div className="text-center bg-white shadow-lg rounded-lg p-8">
           <p className="text-xl text-gray-600">Không có đơn hàng nào.</p>
@@ -316,56 +379,58 @@ const Order = () => {
               <p>
                 <strong>ID đơn hàng:</strong> {editedOrderDetails.orderId}
               </p>
+
+              {/* Non-editable Customer field */}
               <div>
                 <label>
                   <strong>Khách hàng:</strong>
                 </label>
-                <input
-                  type="text"
-                  name="customerName"
-                  value={editedOrderDetails.customerName}
-                  onChange={handleInputChange}
-                  className="form-control"
-                />
+                <p className="form-control">
+                  {editedOrderDetails.customerName}
+                </p>
               </div>
 
+              {/* Staff selection */}
               <div>
                 <label>
                   <strong>Nhân viên:</strong>
                 </label>
                 <select
-                  name="staffName"
-                  value={editedOrderDetails.staffName}
+                  name="staffId"
+                  value={editedOrderDetails.staffId || ""}
                   onChange={handleInputChange}
                   className="form-control"
                 >
-                  {staffList.map((staff) => (
-                    <option key={staff.staffId} value={staff.fullName}>
+                  {staffList.map((staff, index) => (
+                    <option
+                      key={`staff-${staff.staffId}-${index}`}
+                      value={staff.staffId}
+                    >
                       {staff.fullName}
                     </option>
                   ))}
                 </select>
               </div>
 
+              {/* Kitchen Staff selection */}
               <div>
                 <label>
                   <strong>Nhân viên bếp:</strong>
                 </label>
                 <select
                   name="kitchenStaffId"
-                  value={editedOrderDetails.kitchenStaffId}
+                  value={editedOrderDetails.kitchenStaffId || ""}
                   onChange={handleInputChange}
                   className="form-control"
                 >
-                  {kitchenStaffList.length > 0 ? (
-                    kitchenStaffList.map((staff) => (
-                      <option key={staff.staffId} value={staff.staffId}>
-                        {staff.fullName}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="">Không có nhân viên bếp</option>
-                  )}
+                  {kitchenStaffList.map((staff, index) => (
+                    <option
+                      key={`kitchen-staff-${staff.staffId}-${index}`}
+                      value={staff.staffId}
+                    >
+                      {staff.fullName}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -373,14 +438,14 @@ const Order = () => {
               <ul>
                 {editedOrderDetails.orderItems.map((item) => (
                   <li key={item.orderItemId} className="mb-2">
-                    <p>
+                    <p key={`name-${item.orderItemId}`}>
                       <strong>Tên món:</strong> {item.menuItem.name}
                     </p>
-                    <p>
+                    <p key={`price-${item.orderItemId}`}>
                       <strong>Giá:</strong>{" "}
                       {item.menuItem.price?.toLocaleString() || "0"} VND
                     </p>
-                    <p>
+                    <p key={`quantity-${item.orderItemId}`}>
                       <strong>Số lượng:</strong> {item.quantity}
                     </p>
                   </li>
@@ -396,13 +461,8 @@ const Order = () => {
             <p>Đang tải thông tin chi tiết...</p>
           )}
         </Modal.Body>
+
         <Modal.Footer>
-          <Button
-            variant="danger"
-            onClick={() => handleDeleteOrder(editedOrderDetails.orderId)}
-          >
-            Xoá đơn hàng
-          </Button>
           <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
             Đóng
           </Button>

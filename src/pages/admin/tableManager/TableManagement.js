@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import TableCard from "../../../components/tableCard/index.js";
+import Pagination from "../../../components/pagination";
 
 const TableManagement = () => {
   const [tables, setTables] = useState([]);
@@ -208,61 +209,9 @@ const TableManagement = () => {
     indexOfLastTable
   );
 
-  const totalPages = Math.ceil(filteredTables.length / tablesPerPage);
-
-  // Hàm phân trang
+  // Hàm xử lý thay đổi trang cho component Pagination mới
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
-  };
-
-  // Component phân trang từ AdminDashboard
-  const Pagination = () => {
-    return (
-      <nav>
-        <ul className="pagination justify-content-center">
-          {/* Nút Previous */}
-          <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-            <button
-              className="page-link"
-              onClick={() => handlePageChange(currentPage - 1)}
-            >
-              Previous
-            </button>
-          </li>
-
-          {/* Các nút trang */}
-          {Array.from({ length: totalPages }, (_, index) => (
-            <li
-              key={index}
-              className={`page-item ${
-                currentPage === index + 1 ? "active" : ""
-              }`}
-            >
-              <button
-                className="page-link"
-                onClick={() => handlePageChange(index + 1)}
-              >
-                {index + 1}
-              </button>
-            </li>
-          ))}
-
-          {/* Nút Next */}
-          <li
-            className={`page-item ${
-              currentPage === totalPages ? "disabled" : ""
-            }`}
-          >
-            <button
-              className="page-link"
-              onClick={() => handlePageChange(currentPage + 1)}
-            >
-              Next
-            </button>
-          </li>
-        </ul>
-      </nav>
-    );
   };
 
   return (
@@ -362,11 +311,13 @@ const TableManagement = () => {
         </div>
       )}
 
-      {/* Phân trang */}
-      {totalPages > 1 && (
-        <div className="mt-6">
-          <Pagination />
-        </div>
+      {/* Sử dụng component Pagination mới */}
+      {filteredTables.length > tablesPerPage && (
+        <Pagination
+          totalItems={filteredTables.length}
+          itemsPerPage={tablesPerPage}
+          onPageChange={handlePageChange}
+        />
       )}
     </div>
   );

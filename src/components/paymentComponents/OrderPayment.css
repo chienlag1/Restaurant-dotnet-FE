@@ -1,0 +1,70 @@
+.order-payment-container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 500px;
+    margin: 50px auto;
+  }
+  
+  .order-payment-container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .order-details {
+    margin-bottom: 20px;
+  }
+  
+  .order-details p {
+    margin: 5px 0;
+  }
+  
+  .payment-method-selection {
+    margin-bottom: 20px;
+  }
+  
+  .payment-method-selection label {
+    margin-right: 20px;
+  }
+  
+  .card-input {
+    margin-bottom: 20px;
+  }
+  
+  .card-input label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  .order-payment-container .StripeElement {
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 4px;
+  }
+  
+  .order-payment-container button {
+    background-color: #6772e5;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    width: 100%;
+    cursor: pointer;
+  }
+  
+  .order-payment-container button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  
+  .payment-message {
+    margin-top: 10px;
+    text-align: center;
+  }
+  .payment-message:contains('thành công') {
+    color: green;
+  }
+  .payment-message:contains('Lỗi') {
+    color: red;
+  }
