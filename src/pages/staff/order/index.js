@@ -221,7 +221,6 @@ const OrderCustomer = () => {
   };
 
   const handleCreateOrder = async (tableId) => {
-    // Validate dữ liệu trước khi tạo order
     if (!validateOrderData(tableId)) {
       return;
     }
@@ -239,7 +238,7 @@ const OrderCustomer = () => {
       }
 
       const orderData = {
-        customerId: customerId, // Đảm bảo giá trị này đã được cập nhật
+        customerId: customerId,
         orderItems: cartData[tableId].map((item) => ({
           menuItemId: item.menuItemId,
           quantity: item.quantity,
@@ -248,9 +247,8 @@ const OrderCustomer = () => {
         tableId: parseInt(tableId),
       };
 
-      console.log("Order Data:", orderData);
-
-      const response = await axios.post(
+      // Gọi API tạo đơn hàng
+      const createOrderResponse = await axios.post(
         "http://localhost:5112/api/order/create-order",
         orderData,
         {
@@ -261,23 +259,49 @@ const OrderCustomer = () => {
         }
       );
 
+      // Lấy orderId từ phản hồi của API (nếu có)
+      let newOrderId = createOrderResponse.data.orderId;
+
+      // Nếu API không trả về orderId, gọi API lấy danh sách đơn hàng để lấy đơn hàng mới nhất
+      if (!newOrderId) {
+        const ordersResponse = await axios.get(
+          "http://localhost:5112/api/order/get-all-orders",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        // Lọc ra đơn hàng mới nhất dựa trên thời gian tạo (createdAt)
+        const latestOrder = ordersResponse.data.$values.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        )[0];
+
+        if (!latestOrder) {
+          throw new Error("Không tìm thấy đơn hàng mới được tạo.");
+        }
+
+        newOrderId = latestOrder.orderId; // Gán lại giá trị cho newOrderId
+      }
+
       // Cập nhật lại giỏ hàng
       const updatedCart = { ...cartData };
       delete updatedCart[tableId];
       localStorage.setItem("cart", JSON.stringify(updatedCart));
       setCartData(updatedCart);
 
+      // Hiển thị thông báo thành công
       setSuccessMessage(
         `Đặt hàng thành công cho bàn ${tableId}! Mã đơn hàng: ${
-          response.data.orderId || "N/A"
+          newOrderId || "N/A"
         }`
       );
-      setShowConfirmModal(false);
 
-      // Tự động ẩn thông báo thành công sau 5 giây
-      setTimeout(() => {
-        setSuccessMessage(null);
-      }, 5000);
+      // Chuyển hướng sang trang thanh toán với orderId
+      navigate(`/payment/${newOrderId}`);
+
+      setShowConfirmModal(false);
     } catch (err) {
       console.error("Lỗi khi đặt hàng:", err);
       const errorMessage =
@@ -287,7 +311,6 @@ const OrderCustomer = () => {
       setProcessingOrder(false);
     }
   };
-
   const handleShowModal = (tableId) => {
     setSelectedTable(tableId);
     setTempCartData(cartData[tableId] || []);

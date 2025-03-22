@@ -24,6 +24,7 @@ import PromotionForm from "../pages/admin/promotionManager/PromotionForm";
 import PromotionList from "../pages/admin/promotionManager/PromotionList";
 import PromotionView from "../pages/staff/promotion";
 import Payment from "../pages/staff/payment";
+import PaymentFormWrapper from "../components/paymentComponents/PaymentForm";
 
 const Routes = () => {
   const elements = useRoutes([
@@ -32,7 +33,11 @@ const Routes = () => {
       element: <LayoutUser Page={HomePage} />,
     },
     {
-      path: "/payment",
+      path: "/pay",
+      element: <PaymentFormWrapper></PaymentFormWrapper>,
+    },
+    {
+      path: "/payment/:orderId",
       element: <LayoutStaff Page={Payment} />,
     },
     {

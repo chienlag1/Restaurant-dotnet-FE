@@ -72,7 +72,7 @@ const SidebarStaff = () => {
           <span className="text-base font-medium">Discount</span>
         </NavLink>
         <NavLink
-          to="/payment"
+          to="/payment/:orderId"
           className={({ isActive }) =>
             `flex items-center px-4 py-3 rounded-lg transition no-underline ${
               isActive
