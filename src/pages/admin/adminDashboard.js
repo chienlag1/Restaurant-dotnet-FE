@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import "bootstrap/dist/css/bootstrap.min.css";
+import Pagination from "../../components/pagination"; // Đảm bảo đường dẫn đúng
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
@@ -94,7 +94,6 @@ const AdminDashboard = () => {
         user.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
@@ -142,130 +141,128 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="container mt-4">
-      <h2 className="text-center fw-bold text-primary">Admin Dashboard</h2>
-      <p className="fs-5">Danh Sách Users:</p>
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        <h2 className="text-3xl font-bold text-center text-blue-600 mb-6">
+          Admin Dashboard
+        </h2>
+        <p className="text-lg text-gray-700 mb-4">Danh Sách Users:</p>
 
-      {loading && <p>Loading users...</p>}
-      {error && <p className="text-danger">{error}</p>}
-
-      {!loading && !error && (
-        <>
-          <div className="d-flex justify-content-between mb-3">
-            <select
-              className="form-select w-auto"
-              onChange={(e) => setFilterRole(e.target.value)}
-            >
-              <option value="all">All</option>
-              <option value="Admin">Admin</option>
-              <option value="User">User</option>
-              <option value="Staff">Staff</option>
-              <option value="Customer">Customer</option>
-              <option value="KitchenStaff">KitchenStaff</option>
-            </select>
-            <input
-              type="text"
-              className="form-control w-25"
-              placeholder="🔍 Tìm kiếm theo tên hoặc email"
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        {loading && (
+          <div className="flex justify-center items-center h-64">
+            <p className="text-gray-600">Loading users...</p>
           </div>
+        )}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
 
-          <div className="table-responsive">
-            <table className="table table-light table-hover text-center">
-              <thead>
-                <tr className="table-primary">
-                  <th>Email</th>
-                  <th>Name</th>
-                  <th>Role</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody style={{ minHeight: "400px" }}>
-                {currentUsers.map((user, index) => (
-                  <tr key={index}>
-                    <td>{user.email}</td>
-                    <td>{user.fullName}</td>
-                    <td>
-                      <span
-                        className={`badge ${
-                          user.roleId === 2 ? "bg-info" : "bg-warning"
-                        } text-dark`}
-                      >
-                        {getRoleName(user.roleId)}
-                      </span>
-                    </td>
-                    <td>
-                      <select
-                        className="form-select"
-                        value={getRoleName(user.roleId)}
-                        disabled={user.roleId === 2}
-                        onChange={(e) => handleRoleChange(user, e.target.value)}
-                      >
-                        <option value="User">User</option>
-                        <option value="Admin">Admin</option>
-                        <option value="Customer">Customer</option>
-                        <option value="KitchenStaff">KitchenStaff</option>
+        {!loading && !error && (
+          <>
+            <div className="flex justify-between items-center mb-6">
+              <select
+                className="px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => setFilterRole(e.target.value)}
+              >
+                <option value="all">All</option>
+                <option value="Admin">Admin</option>
+                <option value="User">User</option>
+                <option value="Staff">Staff</option>
+                <option value="Customer">Customer</option>
+                <option value="KitchenStaff">KitchenStaff</option>
+              </select>
+              <input
+                type="text"
+                className="w-64 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="🔍 Tìm kiếm theo tên hoặc email"
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
 
-                        <option value="Staff">Staff</option>
-                      </select>
-                    </td>
+            <div className="bg-white shadow-md rounded-lg overflow-hidden">
+              <table className="min-w-full">
+                <thead className="bg-blue-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Role
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Action
+                    </th>
                   </tr>
-                ))}
-                {[...Array(usersPerPage - currentUsers.length)].map(
-                  (_, index) => (
-                    <tr key={`empty-${index}`}>
-                      <td colSpan="4">&nbsp;</td>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {currentUsers.map((user, index) => (
+                    <tr
+                      key={index}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {user.email}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {user.fullName}
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        <span
+                          className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${
+                            user.roleId === 2
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {getRoleName(user.roleId)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        <select
+                          className="px-3 py-1 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          value={getRoleName(user.roleId)}
+                          disabled={user.roleId === 2}
+                          onChange={(e) =>
+                            handleRoleChange(user, e.target.value)
+                          }
+                        >
+                          <option value="User">User</option>
+                          <option value="Admin">Admin</option>
+                          <option value="Customer">Customer</option>
+                          <option value="KitchenStaff">KitchenStaff</option>
+                          <option value="Staff">Staff</option>
+                        </select>
+                      </td>
                     </tr>
-                  )
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                  {[...Array(usersPerPage - currentUsers.length)].map(
+                    (_, index) => (
+                      <tr key={`empty-${index}`}>
+                        <td colSpan="4" className="px-6 py-4">
+                          &nbsp;
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-          <nav>
-            <ul className="pagination justify-content-center">
-              <li
-                className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
-              >
-                <button
-                  className="page-link"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                >
-                  Previous
-                </button>
-              </li>
-              {Array.from({ length: totalPages }, (_, index) => (
-                <li
-                  key={index}
-                  className={`page-item ${
-                    currentPage === index + 1 ? "active" : ""
-                  }`}
-                >
-                  <button
-                    className="page-link"
-                    onClick={() => handlePageChange(index + 1)}
-                  >
-                    {index + 1}
-                  </button>
-                </li>
-              ))}
-              <li
-                className={`page-item ${
-                  currentPage === totalPages ? "disabled" : ""
-                }`}
-              >
-                <button
-                  className="page-link"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                >
-                  Next
-                </button>
-              </li>
-            </ul>
-          </nav>
-        </>
-      )}
+            <div className="mt-6">
+              <Pagination
+                totalPages={Math.ceil(filteredUsers.length / usersPerPage)}
+                currentPage={currentPage}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 };

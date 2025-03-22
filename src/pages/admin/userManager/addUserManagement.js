@@ -5,7 +5,7 @@ const AddUser = ({ showModal, handleCloseModal, handleAddUser }) => {
   const [newUser, setNewUser] = useState({
     email: "",
     fullName: "",
-    password: "",
+    password: "string",
     roleId: 5, // Mặc định là Customer
   });
 
@@ -43,16 +43,6 @@ const AddUser = ({ showModal, handleCloseModal, handleAddUser }) => {
               name="email"
               placeholder="Nhập email"
               value={newUser.email}
-              onChange={handleChange}
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Password</Form.Label>
-            <Form.Control
-              type="password"
-              name="password"
-              placeholder="Nhập password"
-              value={newUser.password}
               onChange={handleChange}
             />
           </Form.Group>

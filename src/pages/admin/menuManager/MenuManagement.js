@@ -5,6 +5,7 @@ import EditDetailManagement from "./EditDetailManagement.js";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import Modal from "react-bootstrap/Modal";
+import Pagination from "../../../components/pagination";
 
 const MenuManagement = () => {
   const [show, setShow] = useState(false);
@@ -74,62 +75,10 @@ const MenuManagement = () => {
     setCurrentPage(pageNumber);
   };
 
-  // Component phân trang từ AdminDashboard
-  const Pagination = () => {
-    const totalPages = Math.ceil(getCurrentItems().length / itemsPerPage);
-
-    return (
-      <nav>
-        <ul className="pagination justify-content-center">
-          {/* Nút Previous */}
-          <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-            <button
-              className="page-link"
-              onClick={() => handlePageChange(currentPage - 1)}
-            >
-              Previous
-            </button>
-          </li>
-
-          {/* Các nút trang */}
-          {Array.from({ length: totalPages }, (_, index) => (
-            <li
-              key={index}
-              className={`page-item ${
-                currentPage === index + 1 ? "active" : ""
-              }`}
-            >
-              <button
-                className="page-link"
-                onClick={() => handlePageChange(index + 1)}
-              >
-                {index + 1}
-              </button>
-            </li>
-          ))}
-
-          {/* Nút Next */}
-          <li
-            className={`page-item ${
-              currentPage === totalPages ? "disabled" : ""
-            }`}
-          >
-            <button
-              className="page-link"
-              onClick={() => handlePageChange(currentPage + 1)}
-            >
-              Next
-            </button>
-          </li>
-        </ul>
-      </nav>
-    );
-  };
-
   useEffect(() => {
     fetchMenuItems();
   }, []);
-
+  // Lấy món ăn từ database
   const fetchMenuItems = async () => {
     try {
       const response = await axios.get(
@@ -142,7 +91,7 @@ const MenuManagement = () => {
       setMenuItems([]);
     }
   };
-
+  // Thêm món ăn
   const handleAddItem = async () => {
     try {
       const token = localStorage.getItem("authToken");
@@ -175,6 +124,7 @@ const MenuManagement = () => {
     }
   };
 
+  // Xoá món ăn
   const handleDeleteItem = async (menuItemId) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa món ăn này?")) return;
 
@@ -348,19 +298,21 @@ const MenuManagement = () => {
         ))}
       </div>
 
-      {/* Phân trang */}
-      <div style={{ marginTop: "16px" }}>
-        {" "}
-        {/* Thêm margin-top */}
-        <Pagination />
-      </div>
-
       {/* Modal chỉnh sửa chi tiết */}
       <EditDetailManagement
         selectedProduct={selectedProduct}
         onClose={() => setSelectedProduct(null)}
         onUpdate={handleUpdate} // Truyền hàm handleUpdate vào đây
       />
+
+      {/* Phân trang */}
+      <div style={{ marginTop: "16px" }}>
+        <Pagination
+          totalItems={getCurrentItems().length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
+        />
+      </div>
     </div>
   );
 };

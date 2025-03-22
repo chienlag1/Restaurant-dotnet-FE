@@ -1,7 +1,16 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import { Save, ArrowLeft, Calendar, Percent, Type, FileText, Activity, Loader2 } from "lucide-react";
+import {
+  Save,
+  ArrowLeft,
+  Calendar,
+  Percent,
+  Type,
+  FileText,
+  Activity,
+  Loader2,
+} from "lucide-react";
 
 const PromotionForm = () => {
   const navigate = useNavigate();
@@ -23,9 +32,14 @@ const PromotionForm = () => {
 
     setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:5112/api/promotions/get-detail-promotion/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
-      });
+      const response = await axios.get(
+        `http://localhost:5112/api/promotions/get-detail-promotion/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        }
+      );
       const promotion = response.data;
 
       setFormData({
@@ -63,13 +77,25 @@ const PromotionForm = () => {
 
     try {
       if (id) {
-        await axios.put(`http://localhost:5112/api/promotions/update-promotion/${id}`, formData, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
-        });
+        await axios.put(
+          `http://localhost:5112/api/promotions/update-promotion/${id}`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            },
+          }
+        );
       } else {
-        await axios.post("http://localhost:5112/api/promotions/create-promotion", formData, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
-        });
+        await axios.post(
+          "http://localhost:5112/api/promotions/create-promotion",
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            },
+          }
+        );
       }
       navigate("/promotion-management");
     } catch (error) {
@@ -201,7 +227,11 @@ const PromotionForm = () => {
                 ></span>
               </label>
             </div>
-            <span className={`text-sm ${formData.isActive ? "text-green-600" : "text-gray-500"}`}>
+            <span
+              className={`text-sm ${
+                formData.isActive ? "text-green-600" : "text-gray-500"
+              }`}
+            >
               {formData.isActive ? "Active" : "Inactive"}
             </span>
           </div>

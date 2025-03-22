@@ -6,7 +6,6 @@ import LoginPage from "../pages/loginPage";
 import RegisterPage from "../pages/registerPage";
 import ForgotPasswordPage from "../pages/forgotPasswordPage";
 import ResetPasswordPage from "../pages/resetPasswordPage";
-
 import LayoutAdmin from "../layouts/layoutAdmin";
 import StaffManagement from "../pages/admin/staffmanager/StaffManagement";
 import AdminDashboard from "../pages/admin/adminDashboard";
@@ -24,12 +23,22 @@ import Promotion from "../pages/admin/promotionManager";
 import PromotionForm from "../pages/admin/promotionManager/PromotionForm";
 import PromotionList from "../pages/admin/promotionManager/PromotionList";
 import PromotionView from "../pages/staff/promotion";
+import Payment from "../pages/staff/payment";
+import PaymentFormWrapper from "../components/paymentComponents/PaymentForm";
 
 const Routes = () => {
   const elements = useRoutes([
     {
       path: "/",
       element: <LayoutUser Page={HomePage} />,
+    },
+    {
+      path: "/pay",
+      element: <PaymentFormWrapper></PaymentFormWrapper>,
+    },
+    {
+      path: "/payment/:orderId",
+      element: <LayoutStaff Page={Payment} />,
     },
     {
       path: "/promotion",

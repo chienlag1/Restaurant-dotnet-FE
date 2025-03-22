@@ -3,19 +3,16 @@ import axios from "axios";
 import TableItem from "../../components/tableItem/index.js";
 import { motion } from "framer-motion";
 import "bootstrap/dist/css/bootstrap.min.css";
-import Modal from "react-bootstrap/Modal";
-import Button from "react-bootstrap/Button";
 import { useNavigate } from "react-router";
+
 export default function StaffDashboard() {
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedTable, setSelectedTable] = useState(null);
-  const [menuItems, setMenuItems] = useState([]);
-  const [showMenuModal, setShowMenuModal] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const [currentPage, setCurrentPage] = useState(1); // 🆕 Trang hiện tại
+  const itemsPerPage = 8; // 🆕 Số bàn hiển thị trên mỗi trang
   const navigate = useNavigate();
+
   useEffect(() => {
     const fetchTables = async () => {
       try {
@@ -36,16 +33,32 @@ export default function StaffDashboard() {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
-            withCredentials: true, // Ensure credentials are sent
+            withCredentials: true,
           }
         );
 
-        const fetchedTables = response.data.tables?.$values || [];
+        let fetchedTables = []; // ✅ Khai báo biến trước
 
-        if (!Array.isArray(fetchedTables)) {
-          throw new Error("Dữ liệu không hợp lệ, không phải array");
+        if (
+          response.data.tables &&
+          Array.isArray(response.data.tables.$values)
+        ) {
+          fetchedTables = response.data.tables.$values.map((table, index) => ({
+            ...table,
+            tableNumber: index + 1, // ✅ Đồng bộ số bàn theo AdminDashboard
+            status:
+              table.status.toLowerCase() === "available" ||
+              table.status.toLowerCase() === "còn trống"
+                ? "Còn trống"
+                : "Đã đặt bàn", // ✅ Đồng bộ trạng thái bàn
+          }));
         }
 
+        if (!Array.isArray(fetchedTables) || fetchedTables.length === 0) {
+          throw new Error("Dữ liệu không hợp lệ, không phải array hoặc rỗng");
+        }
+
+        console.log("📌 StaffDashboard - Dữ liệu bàn:", fetchedTables);
         setTables(fetchedTables);
         setLoading(false);
       } catch (error) {
@@ -73,45 +86,29 @@ export default function StaffDashboard() {
   }, []);
 
   const handleTableClick = (table) => {
-    if (table.status !== "Available") return;
+    if (table.status !== "Còn trống") return;
 
     // Hiển thị thông báo xác nhận
     const confirmSelection = window.confirm(
-      `Bạn có chắc chắn muốn chọn bàn ${table.tableId} không?`
+      `Bạn có chắc chắn muốn chọn bàn ${table.tableNumber} không?`
     );
 
     if (confirmSelection) {
       // Lưu thông tin bàn vào localStorage
       localStorage.setItem("selectedTable", JSON.stringify(table));
 
-      // Cập nhật state selectedTable
-      setSelectedTable(table);
-
       // Chuyển hướng sang trang Menu
       navigate("/menu-customer");
     }
   };
-  const handleShowMenu = async () => {
-    try {
-      const response = await axios.get(
-        "http://localhost:5112/api/menuitem/get-all-menuitems"
-      );
-      setMenuItems(response.data);
-      setShowMenuModal(true);
-    } catch (error) {
-      console.error("Lỗi khi tải menu:", error);
-    }
-  };
 
-  // Tính toán số lượng trang
+  // 🆕 Tính toán số lượng trang
   const totalPages = Math.ceil(tables.length / itemsPerPage);
-
-  // Lấy các card cho trang hiện tại
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentTables = tables.slice(indexOfFirstItem, indexOfLastItem);
 
-  // Hàm chuyển trang
+  // 🆕 Hàm chuyển trang
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
@@ -126,7 +123,7 @@ export default function StaffDashboard() {
         <>
           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3">
             {currentTables.map((table) => (
-              <div key={table.tableId} className="col-md-4">
+              <div key={table.tableNumber} className="col-md-4">
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -140,7 +137,7 @@ export default function StaffDashboard() {
             ))}
           </div>
 
-          {/* Phân trang */}
+          {/* 🆕 Phân trang */}
           <div className="flex justify-center mt-6">
             <nav className="block">
               <ul className="flex pl-0 rounded list-none flex-wrap">
@@ -191,45 +188,6 @@ export default function StaffDashboard() {
       ) : (
         <p className="text-center">Không có bàn nào để hiển thị.</p>
       )}
-
-      {selectedTable && (
-        <div className="fixed-bottom p-4 bg-light shadow-lg text-center rounded-top border-top border-primary">
-          <h2 className="text-lg font-bold">
-            Đặt món cho Bàn {selectedTable.tableId}
-          </h2>
-          <button
-            className="btn btn-primary mt-3 px-4 py-2"
-            onClick={handleShowMenu}
-          >
-            Đặt món ngay
-          </button>
-        </div>
-      )}
-
-      {/* Modal hiển thị danh sách món ăn */}
-      <Modal show={showMenuModal} onHide={() => setShowMenuModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Danh sách món ăn</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {menuItems.length > 0 ? (
-            <ul className="list-group">
-              {menuItems.map((item) => (
-                <li key={item.menuItemId} className="list-group-item">
-                  {item.name} - {item.price}đ
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>Không có món ăn nào.</p>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowMenuModal(false)}>
-            Đóng
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 }
