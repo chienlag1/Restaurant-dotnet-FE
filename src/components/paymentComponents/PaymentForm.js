@@ -29,89 +29,89 @@ const PaymentForm = ({ orderId, onPaymentSuccess, onClose, amount }) => {
     }
 
     try {
-      // Bước 1: Tạo PaymentMethod từ CardElement
+      // 1. Tạo PaymentMethod
       const cardElement = elements.getElement(CardElement);
       const { paymentMethod, error: methodError } =
         await stripe.createPaymentMethod({
           type: "card",
           card: cardElement,
+          billing_details: {
+            // Thêm thông tin billing nếu cần
+            name: "Tên khách hàng", // Có thể lấy từ form
+          },
         });
 
-      if (methodError) throw new Error(methodError.message);
+      if (methodError) {
+        throw new Error(methodError.message || "Lỗi thông tin thẻ");
+      }
 
-      // giá trị của số tiền phải trả có 2 số thập phân
-      const roundedAmount = Math.round(amount * 100) / 100;
-      // Bước 2: Gọi API process-payment để khởi tạo giao dịch
+      // 2. Chuẩn bị dữ liệu gửi lên server
+      const paymentData = {
+        orderId: orderId,
+        paymentMethod: "card", // Thay "Card" thành "card" để chuẩn Stripe
+        paymentMethodId: paymentMethod.id, // Thay cardToken thành paymentMethodId
+        amount: Math.round(amount * 100), // Gửi amount dưới dạng cents (số nguyên)
+        currency: "vnd", // Thêm currency nếu server yêu cầu
+        metadata: {
+          // Thêm metadata nếu cần
+          order_id: orderId,
+        },
+      };
+
+      // 3. Gọi API process-payment
       const processResponse = await fetch(
         "http://localhost:5112/api/payment/process-payment",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId: orderId,
-            paymentMethod: "Card",
-            cardToken: paymentMethod.id,
-            amount: roundedAmount,
-          }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer YOUR_AUTH_TOKEN", // Thêm nếu API yêu cầu
+          },
+          body: JSON.stringify(paymentData),
         }
       );
-
-      if (!processResponse.ok) {
-        const errorData = await processResponse.json();
-        console.error("Process Payment API Error:", errorData); // Ghi log lỗi
-        throw new Error(
-          errorData.message ||
-            "Không thể xử lý thanh toán. Vui lòng thử lại sau."
-        );
-      }
 
       const processResult = await processResponse.json();
 
-      if (!processResult.success) {
+      if (!processResponse.ok) {
+        console.error("Chi tiết lỗi từ server:", processResult);
         throw new Error(
-          processResult.message || "Khởi tạo thanh toán thất bại."
+          processResult.message ||
+            processResult.error ||
+            "Không thể xử lý thanh toán. Mã lỗi: " + processResponse.status
         );
       }
 
-      // Bước 3: Gọi API confirm-payment để xác nhận giao dịch
-      const confirmResponse = await fetch(
-        "http://localhost:5112/api/payment/confirm-payment",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId: orderId,
-            paymentIntentId: processResult.paymentIntentId, // Giả sử API trả về paymentIntentId
-          }),
+      // 4. Xử lý kết quả
+      if (processResult.requires_action && processResult.client_secret) {
+        // Xác nhận thanh toán 3D Secure nếu cần
+        const { error: confirmError, paymentIntent } =
+          await stripe.confirmCardPayment(processResult.client_secret);
+
+        if (confirmError) {
+          throw new Error(
+            confirmError.message || "Xác nhận thanh toán thất bại"
+          );
         }
-      );
 
-      if (!confirmResponse.ok) {
-        const errorData = await confirmResponse.json();
-        console.error("Confirm Payment API Error:", errorData); // Ghi log lỗi
-        throw new Error(
-          errorData.message ||
-            "Không thể xác nhận thanh toán. Vui lòng thử lại sau."
-        );
-      }
-
-      const confirmResult = await confirmResponse.json();
-
-      if (confirmResult.success) {
+        if (paymentIntent.status === "succeeded") {
+          setPaymentMessage("Thanh toán thành công!");
+          if (onPaymentSuccess) onPaymentSuccess(paymentIntent);
+        }
+      } else if (processResult.success) {
         setPaymentMessage("Thanh toán thành công!");
-        if (onPaymentSuccess) onPaymentSuccess(confirmResult);
+        if (onPaymentSuccess) onPaymentSuccess(processResult);
       } else {
-        throw new Error(
-          confirmResult.message || "Xác nhận thanh toán thất bại."
-        );
+        throw new Error("Khởi tạo thanh toán thất bại");
       }
     } catch (error) {
+      console.error("Payment Error Details:", error);
       setPaymentMessage(`Lỗi: ${error.message}`);
-      console.error("Payment Error:", error); // Ghi log lỗi
     } finally {
       setIsProcessing(false);
     }
   };
+
   return (
     <div className="space-y-4">
       <CardElement
@@ -120,27 +120,35 @@ const PaymentForm = ({ orderId, onPaymentSuccess, onClose, amount }) => {
             base: {
               fontSize: "16px",
               color: "#424770",
-              "::placeholder": {
-                color: "#aab7c4",
-              },
+              "::placeholder": { color: "#aab7c4" },
             },
-            invalid: {
-              color: "#9e2146",
+            invalid: { color: "#9e2146" },
+          },
+          hidePostalCode: false, // Hiển thị trường postal code
+          postalCodeElementOptions: {
+            // Tuỳ chỉnh trường postal code nếu cần
+            style: {
+              base: {
+                fontSize: "16px",
+                color: "#424770",
+              },
             },
           },
         }}
         className="p-4 border border-gray-300 rounded-lg"
       />
+
       <div className="flex justify-between">
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+          disabled={isProcessing}
+          className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
         >
           Hủy
         </button>
         <button
-          type="submit"
+          type="button"
           onClick={handleSubmit}
           disabled={!stripe || isProcessing}
           className={`px-4 py-2 text-white rounded ${
@@ -152,6 +160,7 @@ const PaymentForm = ({ orderId, onPaymentSuccess, onClose, amount }) => {
           {isProcessing ? "Đang xử lý..." : "Xác nhận thanh toán"}
         </button>
       </div>
+
       {paymentMessage && (
         <div
           className={`p-3 rounded ${

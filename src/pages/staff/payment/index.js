@@ -28,14 +28,17 @@ const Payment = () => {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        if (!orderId) {
-          throw new Error("Không tìm thấy mã đơn hàng.");
+        // Validate orderId
+        if (!orderId || isNaN(orderId)) {
+          throw new Error("Mã đơn hàng không hợp lệ");
         }
+
         const token = localStorage.getItem("authToken");
         if (!token) {
           navigate("/login");
           return;
         }
+
         const response = await axios.get(
           `http://localhost:5112/api/order/get-order-by-id/${orderId}`,
           {
@@ -44,7 +47,12 @@ const Payment = () => {
             },
           }
         );
-        console.log("API Response:", response.data); // Debug dữ liệu trả về
+
+        // Kiểm tra dữ liệu trả về
+        if (!response.data || !response.data.orderId) {
+          throw new Error("Không tìm thấy thông tin đơn hàng");
+        }
+
         setOrder(response.data);
       } catch (err) {
         setError(err.message || "Đã xảy ra lỗi khi tải thông tin đơn hàng.");
@@ -52,6 +60,7 @@ const Payment = () => {
         setLoading(false);
       }
     };
+
     fetchOrder();
   }, [orderId, navigate]);
 
@@ -141,24 +150,29 @@ const Payment = () => {
   };
 
   // Hiển thị lỗi nếu có
+  // Trong component Payment
   if (error) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md w-full">
-          <div className="text-red-500 text-4xl mb-6">⚠️</div>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-            Hiện tại không có đơn hàng để thanh toán
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Vui lòng kiểm tra lại danh sách đơn hàng hoặc liên hệ với quản trị
-            viên nếu cần hỗ trợ.
-          </p>
-          <button
-            onClick={() => navigate("/order-customer")}
-            className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Quay lại
-          </button>
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+          <div className="text-red-500 text-4xl mb-4 text-center">⚠️</div>
+          <h2 className="text-xl font-bold text-center mb-4">Lỗi thanh toán</h2>
+          <p className="text-gray-600 mb-6 text-center">{error}</p>
+
+          <div className="flex flex-col space-y-3">
+            <button
+              onClick={() => navigate("/order-customer")}
+              className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+            >
+              Quay lại đơn hàng
+            </button>
+            <button
+              onClick={() => navigate("/menu")}
+              className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
+            >
+              Quay lại menu
+            </button>
+          </div>
         </div>
       </div>
     );
