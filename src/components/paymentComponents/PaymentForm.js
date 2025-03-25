@@ -6,14 +6,12 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
-import "./PaymentForm.css"; // Tùy chọn: CSS để tùy chỉnh giao diện
 
-// Khởi tạo Stripe với Test Publishable Key
 const stripePromise = loadStripe(
   "pk_test_51QzDyOQD9zTcHYFLqILQNTyFc9HXRPobrR4eHGsEOp9Ek2BOaTBFZIXraDjyZzGn0MPoVbtf2A1D8Dhla9A1E2hY00I53rGcLb"
-); // Thay bằng Publishable Key của bạn
+);
 
-const PaymentForm = () => {
+const PaymentForm = ({ orderId, onPaymentSuccess, onClose, amount }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [paymentMessage, setPaymentMessage] = useState("");
@@ -31,23 +29,7 @@ const PaymentForm = () => {
     }
 
     try {
-      // Bước 1: Gọi API để tạo PaymentIntent
-      const response = await fetch(
-        "http://localhost:5112/api/payment/create-payment-intent",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amount: 1000, // 10 USD (1000 cent)
-            currency: "usd",
-          }),
-        }
-      );
-
-      if (!response.ok) throw new Error("Không thể tạo PaymentIntent");
-      const { clientSecret } = await response.json();
-
-      // Bước 2: Tạo PaymentMethod từ CardElement
+      // Bước 1: Tạo PaymentMethod từ CardElement
       const cardElement = elements.getElement(CardElement);
       const { paymentMethod, error: methodError } =
         await stripe.createPaymentMethod({
@@ -55,73 +37,144 @@ const PaymentForm = () => {
           card: cardElement,
         });
 
-      if (methodError) {
-        throw new Error(methodError.message);
-      }
+      if (methodError) throw new Error(methodError.message);
 
-      // Bước 3: Gọi API để xác nhận thanh toán
-      const confirmResponse = await fetch(
-        "http://localhost:5112/api/payment/confirm-payment-intent",
+      // giá trị của số tiền phải trả có 2 số thập phân
+      const roundedAmount = Math.round(amount * 100) / 100;
+      // Bước 2: Gọi API process-payment để khởi tạo giao dịch
+      const processResponse = await fetch(
+        "http://localhost:5112/api/payment/process-payment",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            paymentIntentId: clientSecret.split("_secret_")[0],
-            paymentMethodId: paymentMethod.id,
+            orderId: orderId,
+            paymentMethod: "Card",
+            cardToken: paymentMethod.id,
+            amount: roundedAmount,
           }),
         }
       );
 
-      if (!confirmResponse.ok) throw new Error("Không thể xác nhận thanh toán");
+      if (!processResponse.ok) {
+        const errorData = await processResponse.json();
+        console.error("Process Payment API Error:", errorData); // Ghi log lỗi
+        throw new Error(
+          errorData.message ||
+            "Không thể xử lý thanh toán. Vui lòng thử lại sau."
+        );
+      }
+
+      const processResult = await processResponse.json();
+
+      if (!processResult.success) {
+        throw new Error(
+          processResult.message || "Khởi tạo thanh toán thất bại."
+        );
+      }
+
+      // Bước 3: Gọi API confirm-payment để xác nhận giao dịch
+      const confirmResponse = await fetch(
+        "http://localhost:5112/api/payment/confirm-payment",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId: orderId,
+            paymentIntentId: processResult.paymentIntentId, // Giả sử API trả về paymentIntentId
+          }),
+        }
+      );
+
+      if (!confirmResponse.ok) {
+        const errorData = await confirmResponse.json();
+        console.error("Confirm Payment API Error:", errorData); // Ghi log lỗi
+        throw new Error(
+          errorData.message ||
+            "Không thể xác nhận thanh toán. Vui lòng thử lại sau."
+        );
+      }
+
       const confirmResult = await confirmResponse.json();
 
-      if (confirmResult.status === "succeeded") {
+      if (confirmResult.success) {
         setPaymentMessage("Thanh toán thành công!");
+        if (onPaymentSuccess) onPaymentSuccess(confirmResult);
       } else {
-        throw new Error("Thanh toán thất bại");
+        throw new Error(
+          confirmResult.message || "Xác nhận thanh toán thất bại."
+        );
       }
     } catch (error) {
       setPaymentMessage(`Lỗi: ${error.message}`);
+      console.error("Payment Error:", error); // Ghi log lỗi
     } finally {
       setIsProcessing(false);
     }
   };
-
   return (
-    <div className="payment-container">
-      <h2>Thanh toán</h2>
-      <form onSubmit={handleSubmit}>
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: "16px",
-                color: "#32325d",
-                "::placeholder": {
-                  color: "#aab7c4",
-                },
-              },
-              invalid: {
-                color: "#fa755a",
+    <div className="space-y-4">
+      <CardElement
+        options={{
+          style: {
+            base: {
+              fontSize: "16px",
+              color: "#424770",
+              "::placeholder": {
+                color: "#aab7c4",
               },
             },
-          }}
-        />
-        <button type="submit" disabled={!stripe || isProcessing}>
-          {isProcessing ? "Đang xử lý..." : "Thanh toán 10 USD"}
+            invalid: {
+              color: "#9e2146",
+            },
+          },
+        }}
+        className="p-4 border border-gray-300 rounded-lg"
+      />
+      <div className="flex justify-between">
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+        >
+          Hủy
         </button>
-        {paymentMessage && (
-          <div className="payment-message">{paymentMessage}</div>
-        )}
-      </form>
+        <button
+          type="submit"
+          onClick={handleSubmit}
+          disabled={!stripe || isProcessing}
+          className={`px-4 py-2 text-white rounded ${
+            isProcessing || !stripe
+              ? "bg-blue-300 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
+        >
+          {isProcessing ? "Đang xử lý..." : "Xác nhận thanh toán"}
+        </button>
+      </div>
+      {paymentMessage && (
+        <div
+          className={`p-3 rounded ${
+            paymentMessage.includes("thành công")
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
+          }`}
+        >
+          {paymentMessage}
+        </div>
+      )}
     </div>
   );
 };
 
-// Bọc component trong Elements để Stripe hoạt động
-const PaymentFormWrapper = () => (
+const PaymentFormWrapper = ({ orderId, onPaymentSuccess, onClose, amount }) => (
   <Elements stripe={stripePromise}>
-    <PaymentForm />
+    <PaymentForm
+      orderId={orderId}
+      onPaymentSuccess={onPaymentSuccess}
+      onClose={onClose}
+      amount={amount}
+    />
   </Elements>
 );
 

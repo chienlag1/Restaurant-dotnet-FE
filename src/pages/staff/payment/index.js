@@ -1,20 +1,28 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import PaymentFormWrapper from "../../../components/paymentComponents/PaymentForm";
 
 const Payment = () => {
   const { orderId } = useParams(); // Lấy orderId từ URL
   const navigate = useNavigate();
-  const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [promotions, setPromotions] = useState([]); // State để lưu trữ danh sách mã giảm giá
-  const [selectedPromotion, setSelectedPromotion] = useState(""); // State để lưu trữ mã giảm giá được chọn
-  const [discountPercentage, setDiscountPercentage] = useState(0); // State để lưu trữ phần trăm giảm giá
-  const [discountAmount, setDiscountAmount] = useState(0); // State để lưu trữ số tiền đã được trừ
-  const [subtotalAfterDiscount, setSubtotalAfterDiscount] = useState(0); // State để lưu trữ số tiền sau giảm giá
-  const [vatAmount, setVatAmount] = useState(0); // State để lưu trữ VAT
-  const [finalTotal, setFinalTotal] = useState(0); // State để lưu trữ tổng tiền cuối cùng
+
+  // State quản lý dữ liệu và trạng thái của trang
+  const [order, setOrder] = useState(null); // Lưu thông tin đơn hàng
+  const [loading, setLoading] = useState(true); // Trạng thái tải dữ liệu
+  const [error, setError] = useState(null); // Lưu lỗi nếu có
+  const [promotions, setPromotions] = useState([]); // Lưu danh sách mã giảm giá
+  const [selectedPromotion, setSelectedPromotion] = useState(""); // Mã giảm giá được chọn
+  const [discountPercentage, setDiscountPercentage] = useState(0); // Phần trăm giảm giá
+  const [discountAmount, setDiscountAmount] = useState(0); // Số tiền giảm giá
+  const [subtotalAfterDiscount, setSubtotalAfterDiscount] = useState(0); // Số tiền sau giảm giá
+  const [vatAmount, setVatAmount] = useState(0); // VAT (10%)
+  const [finalTotal, setFinalTotal] = useState(0); // Tổng tiền cuối cùng
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false); // Trạng thái modal thanh toán
+  const [paymentMethod, setPaymentMethod] = useState("Cash"); // Phương thức thanh toán hiện tại
+  // Hàm mở và đóng modal thanh toán
+  const openPaymentModal = () => setIsPaymentModalOpen(true);
+  const closePaymentModal = () => setIsPaymentModalOpen(false);
 
   // Lấy thông tin đơn hàng từ API
   useEffect(() => {
@@ -23,13 +31,11 @@ const Payment = () => {
         if (!orderId) {
           throw new Error("Không tìm thấy mã đơn hàng.");
         }
-
         const token = localStorage.getItem("authToken");
         if (!token) {
           navigate("/login");
           return;
         }
-
         const response = await axios.get(
           `http://localhost:5112/api/order/get-order-by-id/${orderId}`,
           {
@@ -38,8 +44,7 @@ const Payment = () => {
             },
           }
         );
-
-        console.log("API Response:", response.data); // Kiểm tra dữ liệu trả về từ API
+        console.log("API Response:", response.data); // Debug dữ liệu trả về
         setOrder(response.data);
       } catch (err) {
         setError(err.message || "Đã xảy ra lỗi khi tải thông tin đơn hàng.");
@@ -47,7 +52,6 @@ const Payment = () => {
         setLoading(false);
       }
     };
-
     fetchOrder();
   }, [orderId, navigate]);
 
@@ -88,17 +92,12 @@ const Payment = () => {
       0
     ) || 0;
 
-  console.log("Total Amount:", totalAmount); // Debug giá trị totalAmount
-
   // Tính toán tổng tiền sau khi áp dụng giảm giá và VAT
   useEffect(() => {
-    console.log("Selected Promotion:", selectedPromotion);
-    console.log("Promotions List:", promotions);
     if (selectedPromotion) {
       const selectedPromo = promotions.find(
         (promo) => promo.name === selectedPromotion
       );
-      console.log("Found Promotion:", selectedPromo);
       if (selectedPromo) {
         const discount = totalAmount * (selectedPromo.discountPercentage / 100);
         setDiscountAmount(discount);
@@ -119,6 +118,7 @@ const Payment = () => {
       setSubtotalAfterDiscount(totalAmount);
     }
   }, [selectedPromotion, totalAmount, promotions]);
+
   // Hiển thị loading khi đang tải dữ liệu
   if (loading) {
     return (
@@ -131,16 +131,31 @@ const Payment = () => {
     );
   }
 
+  const handlePaymentSubmit = (e) => {
+    e.preventDefault();
+    if (paymentMethod === "Stripe Card") {
+      openPaymentModal(); // Mở modal nếu phương thức thanh toán là thẻ tín dụng
+    } else {
+      alert("Thanh toán bằng tiền mặt đã được chọn."); // Xử lý thanh toán tiền mặt
+    }
+  };
+
   // Hiển thị lỗi nếu có
   if (error) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <div className="text-red-500 text-2xl">⚠️</div>
-          <p className="mt-4 text-gray-700">{error}</p>
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md w-full">
+          <div className="text-red-500 text-4xl mb-6">⚠️</div>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+            Hiện tại không có đơn hàng để thanh toán
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Vui lòng kiểm tra lại danh sách đơn hàng hoặc liên hệ với quản trị
+            viên nếu cần hỗ trợ.
+          </p>
           <button
             onClick={() => navigate("/order-customer")}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             Quay lại
           </button>
@@ -149,193 +164,221 @@ const Payment = () => {
     );
   }
 
-  // Hiển thị thông tin đơn hàng
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-50 to-purple-50 p-4">
-      <div className="flex flex-col md:flex-row w-full h-full max-w-6xl bg-white rounded-lg shadow-lg overflow-hidden">
-        {/* Product List Section */}
-        <div className="w-full md:w-1/2 p-8 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg">
-          <h3 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-            🛒 Danh Sách Sản Phẩm
-          </h3>
-
-          {/* Bảng danh sách sản phẩm */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white divide-y divide-gray-200 rounded-lg shadow-md">
-              <thead className="bg-blue-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    Tên Sản Phẩm
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    Giá Tiền
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {order?.orderItems?.$values &&
-                Array.isArray(order.orderItems.$values) ? (
-                  order.orderItems.$values.map((item) => (
-                    <tr
-                      key={item.orderItemId}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {item.menuItem?.name || "Không có tên"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-800">
-                        {(item.totalPrice * item.quantity).toLocaleString()}₫
+    <>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-50 to-purple-50 p-4">
+        <div className="flex flex-col md:flex-row w-full h-full max-w-6xl bg-white rounded-lg shadow-lg overflow-hidden">
+          {/* Section hiển thị danh sách sản phẩm */}
+          <div className="w-full md:w-1/2 p-8 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg">
+            <h3 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
+              🛒 Danh Sách Sản Phẩm
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white divide-y divide-gray-200 rounded-lg shadow-md">
+                <thead className="bg-blue-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Tên Sản Phẩm
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Giá Tiền
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {order?.orderItems?.$values &&
+                  Array.isArray(order.orderItems.$values) ? (
+                    order.orderItems.$values.map((item) => (
+                      <tr
+                        key={item.orderItemId}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {item.menuItem?.name || "Không có tên"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-800">
+                          {(item.totalPrice * item.quantity).toLocaleString()}₫
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="2"
+                        className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-600"
+                      >
+                        Không có sản phẩm nào trong đơn hàng.
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="2"
-                      className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-600"
-                    >
-                      Không có sản phẩm nào trong đơn hàng.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Tổng tiền */}
-          <div className="mt-8">
-            <div className="flex justify-between items-center py-3 border-t border-b border-gray-200">
-              <span className="font-medium text-gray-700">Tổng Tiền:</span>
-              <span className="font-semibold text-lg text-gray-800">
-                {totalAmount.toLocaleString()} VND
-              </span>
+                  )}
+                </tbody>
+              </table>
             </div>
-
-            {/* Giảm giá */}
-            {discountPercentage > 0 && (
-              <div className="flex justify-between items-center py-3">
-                <span className="text-gray-700">
-                  Giảm giá ({discountPercentage}%):
-                </span>
-                <span className="font-semibold text-red-500">
-                  -{discountAmount.toLocaleString()} VND
+            {/* Hiển thị tổng tiền */}
+            <div className="mt-8">
+              <div className="flex justify-between items-center py-3 border-t border-b border-gray-200">
+                <span className="font-medium text-gray-700">Tổng Tiền:</span>
+                <span className="font-semibold text-lg text-gray-800">
+                  {totalAmount.toLocaleString()} VND
                 </span>
               </div>
-            )}
-
-            {/* Số tiền sau giảm giá */}
-            <div className="flex justify-between items-center py-3">
-              <span className="text-gray-700">Số tiền sau giảm giá:</span>
-              <span className="font-semibold text-gray-800">
-                {subtotalAfterDiscount.toLocaleString()} VND
-              </span>
+              {discountPercentage > 0 && (
+                <div className="flex justify-between items-center py-3">
+                  <span className="text-gray-700">
+                    Giảm giá ({discountPercentage}%):
+                  </span>
+                  <span className="font-semibold text-red-500">
+                    -{discountAmount.toLocaleString()} VND
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between items-center py-3">
+                <span className="text-gray-700">Số tiền sau giảm giá:</span>
+                <span className="font-semibold text-gray-800">
+                  {subtotalAfterDiscount.toLocaleString()} VND
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-3">
+                <span className="text-gray-700">VAT (10%):</span>
+                <span className="font-semibold text-green-600">
+                  +{vatAmount.toLocaleString()} VND
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-3 border-t border-gray-200">
+                <span className="text-gray-700 font-medium">
+                  Tổng tiền cuối cùng:
+                </span>
+                <span className="font-bold text-2xl text-blue-600">
+                  {finalTotal.toLocaleString()} VND
+                </span>
+              </div>
             </div>
+          </div>
 
-            {/* VAT */}
-            <div className="flex justify-between items-center py-3">
-              <span className="text-gray-700">VAT (10%):</span>
-              <span className="font-semibold text-green-600">
-                +{vatAmount.toLocaleString()} VND
-              </span>
-            </div>
-
-            {/* Tổng tiền cuối cùng */}
-            <div className="flex justify-between items-center py-3 border-t border-gray-200">
-              <span className="text-gray-700 font-medium">
-                Tổng tiền cuối cùng:
-              </span>
-              <span className="font-bold text-2xl text-blue-600">
-                {finalTotal.toLocaleString()} VND
-              </span>
-            </div>
+          {/* Section hiển thị thông tin thanh toán */}
+          <div className="w-full md:w-1/2 p-8">
+            <h3 className="text-2xl font-semibold text-gray-800 mb-8">
+              💳 Thông Tin Thanh Toán
+            </h3>
+            <form onSubmit={handlePaymentSubmit} className="space-y-6">
+              <div>
+                <label
+                  htmlFor="tableId"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Bàn Số
+                </label>
+                <input
+                  type="text"
+                  id="tableId"
+                  value={order?.tableId || ""}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  readOnly
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="customerName"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Tên Khách Hàng
+                </label>
+                <input
+                  type="text"
+                  id="customerName"
+                  value={order?.customer?.fullName || ""}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  readOnly
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="promotionCode"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Mã giảm giá
+                </label>
+                <select
+                  id="promotionCode"
+                  value={selectedPromotion}
+                  onChange={(e) => setSelectedPromotion(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                >
+                  <option value="">Chọn mã giảm giá</option>
+                  {promotions.map((promotion) => (
+                    <option key={promotion.promotionId} value={promotion.name}>
+                      {promotion.name} ({promotion.discountPercentage}%)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="paymentMethod"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Phương Thức Thanh Toán
+                </label>
+                <select
+                  id="paymentMethod"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                >
+                  <option value="Cash">Tiền Mặt</option>
+                  <option value="Stripe Card">Thẻ Tín Dụng</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Thanh Toán
+              </button>
+            </form>
           </div>
         </div>
 
-        {/* Payment Information Section */}
-        <div className="w-full md:w-1/2 p-8">
-          <h3 className="text-2xl font-semibold text-gray-800 mb-8">
-            💳 Thông Tin Thanh Toán
-          </h3>
-
-          <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
-            <div>
-              <label
-                htmlFor="tableId"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Bàn Số
-              </label>
-              <input
-                type="text"
-                id="tableId"
-                value={order?.tableId || ""} // Hiển thị tableId
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                readOnly // Không cho phép chỉnh sửa
+        {/* Modal thanh toán thẻ tín dụng */}
+        {isPaymentModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 w-full max-w-md">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-semibold">Thanh Toán Bằng Thẻ</h2>
+                <button
+                  onClick={closePaymentModal}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <PaymentFormWrapper
+                orderId={orderId}
+                amount={finalTotal}
+                onPaymentSuccess={(result) => {
+                  alert("Thanh toán thành công!");
+                  closePaymentModal();
+                  // Có thể thêm chuyển hướng hoặc cập nhật UI ở đây
+                }}
+                onClose={closePaymentModal}
               />
             </div>
-            <div>
-              <label
-                htmlFor="customerName"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Tên Khách Hàng
-              </label>
-              <input
-                type="text"
-                id="customerName"
-                value={order?.customer?.fullName || ""} // Hiển thị tên khách hàng
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                readOnly // Không cho phép chỉnh sửa
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="promotionCode"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Mã giảm giá
-              </label>
-              <select
-                id="promotionCode"
-                value={selectedPromotion}
-                onChange={(e) => setSelectedPromotion(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              >
-                <option value="">Chọn mã giảm giá</option>
-                {promotions.map((promotion) => (
-                  <option key={promotion.promotionId} value={promotion.name}>
-                    {promotion.name} ({promotion.discountPercentage}%)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="paymentMethod"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Phương Thức Thanh Toán
-              </label>
-              <select
-                id="paymentMethod"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              >
-                <option value="card">Thẻ Tín Dụng</option>
-                <option value="cash">Tiền Mặt</option>
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Thanh Toán
-            </button>
-          </form>
-        </div>
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
 };
 
