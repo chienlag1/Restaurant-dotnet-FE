@@ -29,15 +29,14 @@ const PaymentForm = ({ orderId, onPaymentSuccess, onClose, amount }) => {
     }
 
     try {
-      // 1. Tạo PaymentMethod
+      // 1. Tạo PaymentMethod (giữ nguyên)
       const cardElement = elements.getElement(CardElement);
       const { paymentMethod, error: methodError } =
         await stripe.createPaymentMethod({
           type: "card",
           card: cardElement,
           billing_details: {
-            // Thêm thông tin billing nếu cần
-            name: "Tên khách hàng", // Có thể lấy từ form
+            name: "Tên khách hàng",
           },
         });
 
@@ -45,64 +44,70 @@ const PaymentForm = ({ orderId, onPaymentSuccess, onClose, amount }) => {
         throw new Error(methodError.message || "Lỗi thông tin thẻ");
       }
 
-      // 2. Chuẩn bị dữ liệu gửi lên server
-      const paymentData = {
-        orderId: orderId,
-        paymentMethod: "card", // Thay "Card" thành "card" để chuẩn Stripe
-        paymentMethodId: paymentMethod.id, // Thay cardToken thành paymentMethodId
-        amount: Math.round(amount * 100), // Gửi amount dưới dạng cents (số nguyên)
-        currency: "vnd", // Thêm currency nếu server yêu cầu
-        metadata: {
-          // Thêm metadata nếu cần
-          order_id: orderId,
-        },
-      };
-
-      // 3. Gọi API process-payment
+      // 2. Gọi API process-payment (giữ nguyên)
       const processResponse = await fetch(
         "http://localhost:5112/api/payment/process-payment",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: "Bearer YOUR_AUTH_TOKEN", // Thêm nếu API yêu cầu
+            Authorization: "Bearer YOUR_AUTH_TOKEN",
           },
-          body: JSON.stringify(paymentData),
+          body: JSON.stringify({
+            orderId,
+            paymentMethod: "card",
+            paymentMethodId: paymentMethod.id,
+            amount: Math.round(amount * 100),
+            currency: "usd",
+          }),
         }
       );
 
       const processResult = await processResponse.json();
+      console.log("Process Payment Result:", processResult);
 
       if (!processResponse.ok) {
-        console.error("Chi tiết lỗi từ server:", processResult);
         throw new Error(
           processResult.message ||
-            processResult.error ||
-            "Không thể xử lý thanh toán. Mã lỗi: " + processResponse.status
+            `Lỗi khởi tạo thanh toán (${processResponse.status})`
         );
       }
 
-      // 4. Xử lý kết quả
-      if (processResult.requires_action && processResult.client_secret) {
-        // Xác nhận thanh toán 3D Secure nếu cần
-        const { error: confirmError, paymentIntent } =
-          await stripe.confirmCardPayment(processResult.client_secret);
+      if (!processResult.transactionId) {
+        throw new Error("Không nhận được transactionId từ server");
+      }
 
-        if (confirmError) {
-          throw new Error(
-            confirmError.message || "Xác nhận thanh toán thất bại"
-          );
+      // 3. Gọi API confirm-payment với xử lý response linh hoạt hơn
+      const confirmResponse = await fetch(
+        "http://localhost:5112/api/payment/confirm-payment",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer YOUR_AUTH_TOKEN",
+          },
+          body: JSON.stringify({
+            paymentIntentId: processResult.transactionId,
+            paymentMethodId: paymentMethod.id,
+            orderId: orderId,
+          }),
         }
+      );
 
-        if (paymentIntent.status === "succeeded") {
-          setPaymentMessage("Thanh toán thành công!");
-          if (onPaymentSuccess) onPaymentSuccess(paymentIntent);
-        }
-      } else if (processResult.success) {
+      const confirmResult = await confirmResponse.json();
+
+      // Xử lý response linh hoạt hơn
+      if (confirmResponse.ok || confirmResult.paymentStatus === "succeeded") {
         setPaymentMessage("Thanh toán thành công!");
-        if (onPaymentSuccess) onPaymentSuccess(processResult);
+
+        // Tự động đóng modal sau 2 giây
+        setTimeout(() => {
+          if (onPaymentSuccess) onPaymentSuccess(confirmResult);
+        }, 2000);
       } else {
-        throw new Error("Khởi tạo thanh toán thất bại");
+        throw new Error(
+          confirmResult.message || "Xác nhận thanh toán không thành công"
+        );
       }
     } catch (error) {
       console.error("Payment Error Details:", error);
@@ -124,9 +129,8 @@ const PaymentForm = ({ orderId, onPaymentSuccess, onClose, amount }) => {
             },
             invalid: { color: "#9e2146" },
           },
-          hidePostalCode: false, // Hiển thị trường postal code
+          hidePostalCode: false,
           postalCodeElementOptions: {
-            // Tuỳ chỉnh trường postal code nếu cần
             style: {
               base: {
                 fontSize: "16px",

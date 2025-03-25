@@ -4,13 +4,14 @@ import TableItem from "../../components/tableItem/index.js";
 import { motion } from "framer-motion";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router";
+import Pagination from "../../components/pagination";
 
 export default function StaffDashboard() {
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1); // 🆕 Trang hiện tại
-  const itemsPerPage = 8; // 🆕 Số bàn hiển thị trên mỗi trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,8 +25,6 @@ export default function StaffDashboard() {
           return;
         }
 
-        console.log("🔄 Fetching tables from API...");
-
         const response = await axios.get(
           "http://localhost:5112/api/tables/get-all-table",
           {
@@ -37,7 +36,7 @@ export default function StaffDashboard() {
           }
         );
 
-        let fetchedTables = []; // ✅ Khai báo biến trước
+        let fetchedTables = [];
 
         if (
           response.data.tables &&
@@ -45,12 +44,12 @@ export default function StaffDashboard() {
         ) {
           fetchedTables = response.data.tables.$values.map((table, index) => ({
             ...table,
-            tableNumber: index + 1, // ✅ Đồng bộ số bàn theo AdminDashboard
+            tableNumber: index + 1,
             status:
               table.status.toLowerCase() === "available" ||
               table.status.toLowerCase() === "còn trống"
                 ? "Còn trống"
-                : "Đã đặt bàn", // ✅ Đồng bộ trạng thái bàn
+                : "Đã đặt bàn",
           }));
         }
 
@@ -58,18 +57,12 @@ export default function StaffDashboard() {
           throw new Error("Dữ liệu không hợp lệ, không phải array hoặc rỗng");
         }
 
-        console.log("📌 StaffDashboard - Dữ liệu bàn:", fetchedTables);
         setTables(fetchedTables);
         setLoading(false);
       } catch (error) {
         console.error("❌ Lỗi khi tải danh sách bàn:", error);
 
-        if (error.response) {
-          console.error("📢 Server Response:", error.response);
-        }
-
         if (error.response?.status === 401) {
-          console.warn("⚠️ Token hết hạn, đăng xuất người dùng.");
           localStorage.removeItem("authToken");
           window.location.href = "/login";
         } else if (error.message.includes("Network Error")) {
@@ -88,28 +81,20 @@ export default function StaffDashboard() {
   const handleTableClick = (table) => {
     if (table.status !== "Còn trống") return;
 
-    // Hiển thị thông báo xác nhận
     const confirmSelection = window.confirm(
       `Bạn có chắc chắn muốn chọn bàn ${table.tableNumber} không?`
     );
 
     if (confirmSelection) {
-      // Lưu thông tin bàn vào localStorage
       localStorage.setItem("selectedTable", JSON.stringify(table));
-
-      // Chuyển hướng sang trang Menu
       navigate("/menu-customer");
     }
   };
 
-  // 🆕 Tính toán số lượng trang
-  const totalPages = Math.ceil(tables.length / itemsPerPage);
+  // Tính toán bàn hiển thị trên trang hiện tại
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentTables = tables.slice(indexOfFirstItem, indexOfLastItem);
-
-  // 🆕 Hàm chuyển trang
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <div className="container mt-4">
@@ -137,53 +122,12 @@ export default function StaffDashboard() {
             ))}
           </div>
 
-          {/* 🆕 Phân trang */}
-          <div className="flex justify-center mt-6">
-            <nav className="block">
-              <ul className="flex pl-0 rounded list-none flex-wrap">
-                <li>
-                  <button
-                    onClick={() => paginate(1)}
-                    className={`${
-                      currentPage === 1
-                        ? "bg-gray-300"
-                        : "bg-white hover:bg-gray-200"
-                    } text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded-l`}
-                    disabled={currentPage === 1}
-                  >
-                    {"<<"}
-                  </button>
-                </li>
-                {[...Array(totalPages)].map((_, index) => (
-                  <li key={index}>
-                    <button
-                      onClick={() => paginate(index + 1)}
-                      className={`${
-                        currentPage === index + 1
-                          ? "bg-blue-500 text-white"
-                          : "bg-white text-gray-800 hover:bg-gray-200"
-                      } font-semibold py-2 px-4 border border-gray-400`}
-                    >
-                      {index + 1}
-                    </button>
-                  </li>
-                ))}
-                <li>
-                  <button
-                    onClick={() => paginate(totalPages)}
-                    className={`${
-                      currentPage === totalPages
-                        ? "bg-gray-300"
-                        : "bg-white hover:bg-gray-200"
-                    } text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded-r`}
-                    disabled={currentPage === totalPages}
-                  >
-                    {">>"}
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          </div>
+          {/* Sử dụng component Pagination mới */}
+          <Pagination
+            totalItems={tables.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={(page) => setCurrentPage(page)}
+          />
         </>
       ) : (
         <p className="text-center">Không có bàn nào để hiển thị.</p>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import Pagination from "../pagination";
 
 const MenuList = () => {
   const [menuItems, setMenuItems] = useState([]);
@@ -7,7 +8,7 @@ const MenuList = () => {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6; // 🆕 Số món ăn hiển thị trên mỗi trang
+  const itemsPerPage = 9;
 
   useEffect(() => {
     axios
@@ -46,11 +47,12 @@ const MenuList = () => {
       return 0;
     });
 
-  // 🆕 Xử lý phân trang
+  // Xử lý phân trang
   const totalPages = Math.ceil(filteredMenu.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredMenu.slice(indexOfFirstItem, indexOfLastItem);
+
   const addToCart = (menuItem) => {
     const selectedTable = JSON.parse(localStorage.getItem("selectedTable"));
 
@@ -59,30 +61,21 @@ const MenuList = () => {
       return;
     }
 
-    // Lấy giỏ hàng từ localStorage hoặc tạo mới nếu chưa có
     const cart = JSON.parse(localStorage.getItem("cart")) || {};
-
-    // Lấy giỏ hàng của bàn đã chọn
     const tableCart = cart[selectedTable.tableId] || [];
-
-    // Kiểm tra xem món đã có trong giỏ hàng chưa
     const existingItem = tableCart.find(
       (item) => item.menuItemId === menuItem.menuItemId
     );
 
     if (existingItem) {
-      existingItem.quantity += 1; // Tăng số lượng nếu món đã có trong giỏ hàng
+      existingItem.quantity += 1;
     } else {
-      tableCart.push({ ...menuItem, quantity: 1 }); // Thêm món mới vào giỏ hàng
+      tableCart.push({ ...menuItem, quantity: 1 });
     }
 
-    // Lưu giỏ hàng của bàn vào cart
     cart[selectedTable.tableId] = tableCart;
-
-    // Lưu giỏ hàng vào localStorage
     localStorage.setItem("cart", JSON.stringify(cart));
 
-    // Hiển thị thông báo thành công
     alert(
       `Đã thêm ${menuItem.name} vào giỏ hàng cho bàn ${selectedTable.tableId}.`
     );
@@ -123,7 +116,7 @@ const MenuList = () => {
         </select>
       </div>
 
-      {/* Danh sách món ăn (3 món mỗi hàng, 6 món mỗi trang) */}
+      {/* Danh sách món ăn */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {currentItems.length > 0 ? (
           currentItems.map((item) => (
@@ -167,27 +160,13 @@ const MenuList = () => {
         )}
       </div>
 
-      {/* 🆕 Điều hướng phân trang */}
+      {/* Sử dụng component Pagination mới */}
       {totalPages > 1 && (
-        <div className="flex justify-center mt-6">
-          <button
-            className="px-4 py-2 bg-gray-300 rounded mx-2 btn btn-primary"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            Trang trước
-          </button>
-          <span className="px-4 py-2">{`Trang ${currentPage} / ${totalPages}`}</span>
-          <button
-            className="px-4 py-2 bg-gray-300 rounded mx-2 btn btn-primary"
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
-            disabled={currentPage === totalPages}
-          >
-            Trang sau
-          </button>
-        </div>
+        <Pagination
+          totalItems={filteredMenu.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
       )}
     </div>
   );

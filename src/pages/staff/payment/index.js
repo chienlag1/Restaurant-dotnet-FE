@@ -156,8 +156,9 @@ const Payment = () => {
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
           <div className="text-red-500 text-4xl mb-4 text-center">⚠️</div>
-          <h2 className="text-xl font-bold text-center mb-4">Lỗi thanh toán</h2>
-          <p className="text-gray-600 mb-6 text-center">{error}</p>
+          <h2 className="text-xl font-bold text-center mb-4">
+            Chưa có đơn hàng cần thanh toán
+          </h2>
 
           <div className="flex flex-col space-y-3">
             <button
@@ -382,9 +383,8 @@ const Payment = () => {
                 orderId={orderId}
                 amount={finalTotal}
                 onPaymentSuccess={(result) => {
-                  alert("Thanh toán thành công!");
+                  navigate("/order-customer");
                   closePaymentModal();
-                  // Có thể thêm chuyển hướng hoặc cập nhật UI ở đây
                 }}
                 onClose={closePaymentModal}
               />
