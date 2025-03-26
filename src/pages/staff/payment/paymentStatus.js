@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
+import * as XLSX from "xlsx";
 
 const PaymentStatus = () => {
   const [orders, setOrders] = useState([]);
@@ -16,7 +17,7 @@ const PaymentStatus = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // Kiểm tra state từ navigation
+    // Check navigation state
     if (location.state?.paymentSuccess) {
       setPaymentSuccess(true);
       setSuccessDetails({
@@ -45,26 +46,19 @@ const PaymentStatus = () => {
             },
           }
         );
-
-        // Kiểm tra cấu trúc dữ liệu từ backend
         const ordersData = Array.isArray(response.data)
           ? response.data
           : Array.isArray(response.data?.$values)
           ? response.data.$values
           : [];
-
         const processedOrders = ordersData.map((order) => ({
           ...order,
           orderItems: order.orderItems?.$values || order.orderItems || [],
-          // Bổ sung trường promotionCode nếu có
-          promotionCode: order.promotionCode || "Không có",
-          createdAt: order.createdAt || new Date(),
         }));
-
         setOrders(processedOrders);
       } catch (err) {
-        console.error("Lỗi khi lấy dữ liệu:", err);
-        setError("Không thể tải danh sách đơn hàng");
+        console.error("Fetch error:", err);
+        setError(err.message || "Failed to fetch orders");
       } finally {
         setLoading(false);
       }
@@ -85,20 +79,15 @@ const PaymentStatus = () => {
           },
         }
       );
-
-      // Xử lý dữ liệu chi tiết
       const orderData = response.data;
       const processedOrder = {
         ...orderData,
         orderItems: orderData.orderItems?.$values || orderData.orderItems || [],
-        promotionCode: orderData.promotionCode || "Không có mã giảm giá",
-        createdAt: orderData.createdAt || new Date(),
       };
-
       setOrderDetails(processedOrder);
     } catch (err) {
-      console.error("Lỗi lấy chi tiết đơn:", err);
-      setError("Không thể tải thông tin chi tiết");
+      console.error("Error fetching order details:", err);
+      setError("Failed to load order details");
     } finally {
       setDetailLoading(false);
     }
@@ -137,6 +126,44 @@ const PaymentStatus = () => {
     );
   };
 
+  const exportOrderToExcel = () => {
+    if (!orderDetails) return;
+
+    // Prepare data for Excel export
+    const orderData = [
+      ["Bàn số", selectedOrder.tableId],
+      ["Trạng thái", selectedOrder.paymentStatus],
+      ["Ngày tạo", new Date(selectedOrder.createdAt).toLocaleString()],
+      ["Mã giảm giá", orderDetails.promotionCode || "Không có mã giảm giá"],
+      ["Nhân viên phục vụ", orderDetails.staff?.fullName || "Chưa chỉ định"],
+      ["Nhân viên bếp", orderDetails.kitchenStaff?.fullName || "Chưa chỉ định"],
+      ["", ""], // Empty row for separation
+      ["Danh sách món ăn", "", "", "", ""],
+      ["Tên món", "Số lượng", "Đơn giá", "Thành tiền"],
+    ];
+
+    // Add menu items
+    orderDetails.orderItems.forEach((item) => {
+      orderData.push([
+        item.menuItem?.name || "Không có tên",
+        item.quantity || 0,
+        `${item.totalPrice} VND`,
+        `${(item.quantity || 0) * (item.totalPrice || 0)} VND`,
+      ]);
+    });
+
+    // Add total
+    orderData.push(["Tổng cộng", "", "", `${calculateTotalAmount(orderDetails.orderItems)} VND`]);
+
+    // Create workbook and worksheet
+    const worksheet = XLSX.utils.aoa_to_sheet(orderData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Order Details");
+
+    // Generate Excel file
+    XLSX.writeFile(workbook, `Order_${selectedOrder.orderId}.xlsx`);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -158,7 +185,8 @@ const PaymentStatus = () => {
       <h2 className="text-center text-3xl font-bold mb-8 text-primary">
         Trạng thái thanh toán
       </h2>
-      {/* Thông báo thành công */}
+
+      {/* Success Notification */}
       {paymentSuccess && successDetails && (
         <div className="fixed top-4 right-4 z-50">
           <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-lg max-w-md">
@@ -184,7 +212,7 @@ const PaymentStatus = () => {
                     {successDetails.paymentMethod}.
                   </p>
                   <p className="text-sm font-semibold mt-1">
-                    Số tiền: {successDetails.amount.toLocaleString()} VND
+                    Số tiền: {successDetails.amount.toLocaleString()} USD
                   </p>
                 </div>
               </div>
@@ -213,7 +241,7 @@ const PaymentStatus = () => {
 
       {orders.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">Không có đơn hàng nào</p>
+          <p className="text-gray-500 text-lg">Không tìm thấy đơn hàng nào</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -232,7 +260,7 @@ const PaymentStatus = () => {
                     <p className="text-gray-600">
                       Tổng tiền:{" "}
                       {calculateTotalAmount(order.orderItems).toLocaleString()}{" "}
-                      VND
+                      USD
                     </p>
                   </div>
                   <span
@@ -255,7 +283,7 @@ const PaymentStatus = () => {
         </div>
       )}
 
-      {/* Modal chi tiết đơn hàng */}
+      {/* Order Details Modal */}
       {isModalOpen && selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -312,9 +340,9 @@ const PaymentStatus = () => {
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-600">Mã giảm giá:</p>
+                      <p className="text-gray-600">Mã giảm Giá:</p>
                       <p className="font-medium">
-                        {orderDetails?.promotionCode || "Không có"}
+                        {orderDetails?.promotionCode || "Không có mã giảm giá"}
                       </p>
                     </div>
                     {orderDetails && (
@@ -328,14 +356,14 @@ const PaymentStatus = () => {
                         <div>
                           <p className="text-gray-600">Nhân viên bếp:</p>
                           <p className="font-medium">
-                            {orderDetails.kitchenStaff?.fullName || "Chưa chỉ định"}
+                            {orderDetails.kitchenStaff?.fullName ||
+                              "Chưa chỉ định"}
                           </p>
                         </div>
                       </>
                     )}
                   </div>
 
-                  {/* Thông tin món ăn */}
                   <h3 className="text-lg font-semibold mb-3">
                     Danh sách món ăn
                   </h3>
@@ -358,7 +386,9 @@ const PaymentStatus = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {orderDetails?.orderItems?.length > 0 ? (
+                        {orderDetails &&
+                        orderDetails.orderItems &&
+                        orderDetails.orderItems.length > 0 ? (
                           orderDetails.orderItems.map((item) => (
                             <tr key={item.menuItemId}>
                               <td className="px-6 py-4 whitespace-nowrap">
@@ -368,11 +398,11 @@ const PaymentStatus = () => {
                                 {item.quantity}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
-                                {item.totalPrice.toLocaleString()} VND
+                                {item.totalPrice?.toLocaleString() || "0"} VND
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 {(
-                                  item.quantity * item.totalPrice
+                                  (item.quantity || 0) * (item.totalPrice || 0)
                                 ).toLocaleString()}{" "}
                                 VND
                               </td>
@@ -384,7 +414,7 @@ const PaymentStatus = () => {
                               colSpan="4"
                               className="px-6 py-4 text-center text-gray-500"
                             >
-                              Không có món ăn nào
+                              Không có món ăn nào trong đơn hàng
                             </td>
                           </tr>
                         )}
@@ -398,7 +428,11 @@ const PaymentStatus = () => {
                             Tổng cộng:
                           </td>
                           <td className="px-6 py-4 font-bold">
-                            {calculateTotalAmount(orderDetails?.orderItems || []).toLocaleString()}{" "}
+                            {orderDetails
+                              ? calculateTotalAmount(
+                                  orderDetails.orderItems
+                                ).toLocaleString()
+                              : "0"}{" "}
                             VND
                           </td>
                         </tr>
@@ -406,49 +440,17 @@ const PaymentStatus = () => {
                     </table>
                   </div>
 
-                  {/* Thông tin thanh toán */}
-                  {selectedOrder.payment && (
-                    <div className="mt-6 border-t pt-4">
-                      <h3 className="text-lg font-semibold mb-3">
-                        Thông tin thanh toán
-                      </h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-gray-600">Phương thức:</p>
-                          <p className="font-medium">
-                            {selectedOrder.payment.paymentMethod}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Số tiền:</p>
-                          <p className="font-medium">
-                            {selectedOrder.payment.amount.toLocaleString()} VND
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Ngày thanh toán:</p>
-                          <p className="font-medium">
-                            {new Date(
-                              selectedOrder.payment.paymentDate
-                            ).toLocaleString()}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Trạng thái:</p>
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              selectedOrder.payment.status === "Completed"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-yellow-100 text-yellow-800"
-                            }`}
-                          >
-                            {selectedOrder.payment.status}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {/* Export Button */}
+                  <div className="mt-6 pt-4 border-t border-gray-200 flex justify-start">
+                    <button
+                      onClick={exportOrderToExcel}
+                      className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                    >
+                      Xuất Excel
+                    </button>
+                  </div>
 
+                  {/* Close Button */}
                   <div className="mt-6 pt-4 border-t border-gray-200 flex justify-end">
                     <button
                       onClick={closeModal}
