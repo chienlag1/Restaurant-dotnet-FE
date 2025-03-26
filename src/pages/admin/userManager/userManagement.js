@@ -12,50 +12,50 @@ const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 10;
-
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+
   const handleShowAddUserModal = () => setShowAddUserModal(true);
   const handleCloseAddUserModal = () => setShowAddUserModal(false);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const token = localStorage.getItem("authToken");
-        if (!token) {
-          setError("Bạn chưa đăng nhập. Vui lòng đăng nhập lại.");
-          setLoading(false);
-          return;
-        }
-        const response = await axios.get(
-          "http://localhost:5112/api/users/search?keyword=@",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setUsers(response.data.$values || []);
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setError("Bạn chưa đăng nhập. Vui lòng đăng nhập lại.");
         setLoading(false);
-      } catch (error) {
-        console.error("Lỗi khi tải danh sách người dùng:", error);
-
-        if (error.response?.status === 401) {
-          console.warn("Token có thể đã hết hạn, đăng xuất người dùng.");
-          localStorage.removeItem("authToken");
-          window.location.href = "/login";
-        } else {
-          setError("Lỗi khi tải danh sách người dùng. Vui lòng thử lại.");
-        }
-        setLoading(false);
+        return;
       }
-    };
+      const response = await axios.get(
+        "http://localhost:5112/api/users/search?keyword=@",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setUsers(response.data.$values || []);
+      setLoading(false);
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách người dùng:", error);
+      if (error.response?.status === 401) {
+        console.warn("Token có thể đã hết hạn, đăng xuất người dùng.");
+        localStorage.removeItem("authToken");
+        window.location.href = "/login";
+      } else {
+        setError("Lỗi khi tải danh sách người dùng. Vui lòng thử lại.");
+      }
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUsers();
   }, []);
 
+  // Hàm xử lý thêm khách hàng
   const handleAddUser = async (newUser) => {
     if (!newUser.email || !newUser.fullName || !newUser.password) {
       alert("Vui lòng điền đầy đủ thông tin!");
       return;
     }
-
     try {
       const token = localStorage.getItem("authToken");
       if (!token) {
@@ -63,8 +63,8 @@ const UserManagement = () => {
         window.location.href = "/login";
         return;
       }
-
-      const response = await axios.post(
+      // Thêm khách hàng mới
+      await axios.post(
         "http://localhost:5112/api/customer/create-customer",
         newUser,
         {
@@ -74,13 +74,11 @@ const UserManagement = () => {
           },
         }
       );
-
-      setUsers([...users, response.data]);
-      alert("Thêm khách hàng thành công!");
+      await fetchUsers();
       handleCloseAddUserModal();
+      alert("Thêm khách hàng thành công!");
     } catch (error) {
       console.error("Error response:", error.response);
-
       if (error.response && error.response.status === 401) {
         alert("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
         localStorage.removeItem("authToken");
@@ -91,10 +89,10 @@ const UserManagement = () => {
     }
   };
 
-  // Chỉ lọc các người dùng có roleId = 5 (Customer)
+  // Lọc người dùng có roleId = 5 (Customer)
   const filteredUsers = users.filter(
     (user) =>
-      user.roleId === 5 && // Chỉ lấy người dùng có roleId = 5 (Customer)
+      user.roleId === 5 &&
       (user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
