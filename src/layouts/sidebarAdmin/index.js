@@ -6,7 +6,7 @@ const SidebarAdmin = () => {
   const { logout } = useAuth();
 
   return (
-    <div className="h-screen w-64 bg-gray-900 text-white fixed top-0 left-0 flex flex-col shadow-lg ">
+    <div className="h-screen w-64 bg-gray-900 text-white fixed top-0 left-0 flex flex-col shadow-lg">
       {/* Header */}
       <div className="py-5 px-6 bg-gray-800 text-xl font-semibold text-center uppercase tracking-wide">
         <a
@@ -110,6 +110,19 @@ const SidebarAdmin = () => {
         >
           <i className="fas fa-utensils text-lg mr-3"></i>
           <span className="text-base font-medium">Mã Giảm Giá</span>
+        </NavLink>
+        <NavLink
+          to="/feedback-management"
+          className={({ isActive }) =>
+            `flex items-center px-4 py-3 rounded-lg transition no-underline ${
+              isActive
+                ? "bg-gray-700 text-white"
+                : "text-gray-300 hover:bg-gray-700 hover:text-white"
+            }`
+          }
+        >
+          <i className="fas fa-comment text-lg mr-3"></i>
+          <span className="text-base font-medium">Quản Lí Feedback</span>
         </NavLink>
       </nav>
 
