@@ -135,7 +135,7 @@ const MenuList = () => {
                 {item.name}
               </h3>
               <p className="text-lg font-bold text-red-500 mt-1">
-                {item.price ? item.price.toLocaleString() : "0"} VND
+                {item.price ? item.price.toLocaleString() : "0"} USD
               </p>
               <p
                 className={`text-sm font-semibold mt-1 ${

@@ -25,12 +25,17 @@ import PromotionList from "../pages/admin/promotionManager/PromotionList";
 import PromotionView from "../pages/staff/promotion";
 import Payment from "../pages/staff/payment";
 import PaymentFormWrapper from "../components/paymentComponents/PaymentForm";
+import PaymentStatus from "../pages/staff/payment/paymentStatus";
 
 const Routes = () => {
   const elements = useRoutes([
     {
       path: "/",
       element: <LayoutUser Page={HomePage} />,
+    },
+    {
+      path: "/payment-status",
+      element: <LayoutStaff Page={PaymentStatus} />,
     },
     {
       path: "/pay",

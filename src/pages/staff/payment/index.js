@@ -4,31 +4,33 @@ import axios from "axios";
 import PaymentFormWrapper from "../../../components/paymentComponents/PaymentForm";
 
 const Payment = () => {
-  const { orderId } = useParams(); // Lấy orderId từ URL
+  const { orderId } = useParams();
   const navigate = useNavigate();
 
-  // State quản lý dữ liệu và trạng thái của trang
-  const [order, setOrder] = useState(null); // Lưu thông tin đơn hàng
-  const [loading, setLoading] = useState(true); // Trạng thái tải dữ liệu
-  const [error, setError] = useState(null); // Lưu lỗi nếu có
-  const [promotions, setPromotions] = useState([]); // Lưu danh sách mã giảm giá
-  const [selectedPromotion, setSelectedPromotion] = useState(""); // Mã giảm giá được chọn
-  const [discountPercentage, setDiscountPercentage] = useState(0); // Phần trăm giảm giá
-  const [discountAmount, setDiscountAmount] = useState(0); // Số tiền giảm giá
-  const [subtotalAfterDiscount, setSubtotalAfterDiscount] = useState(0); // Số tiền sau giảm giá
-  const [vatAmount, setVatAmount] = useState(0); // VAT (10%)
-  const [finalTotal, setFinalTotal] = useState(0); // Tổng tiền cuối cùng
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false); // Trạng thái modal thanh toán
-  const [paymentMethod, setPaymentMethod] = useState("Cash"); // Phương thức thanh toán hiện tại
-  // Hàm mở và đóng modal thanh toán
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [promotions, setPromotions] = useState([]);
+  const [selectedPromotion, setSelectedPromotion] = useState("");
+  const [discountPercentage, setDiscountPercentage] = useState(0);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [subtotalAfterDiscount, setSubtotalAfterDiscount] = useState(0);
+  const [vatAmount, setVatAmount] = useState(0);
+  const [finalTotal, setFinalTotal] = useState(0);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
+  // New state for cash payment confirmation
+  const [isCashConfirmationOpen, setIsCashConfirmationOpen] = useState(false);
+  const [isCashReceived, setIsCashReceived] = useState(false);
+
   const openPaymentModal = () => setIsPaymentModalOpen(true);
   const closePaymentModal = () => setIsPaymentModalOpen(false);
+  const openCashConfirmation = () => setIsCashConfirmationOpen(true);
+  const closeCashConfirmation = () => setIsCashConfirmationOpen(false);
 
-  // Lấy thông tin đơn hàng từ API
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        // Validate orderId
         if (!orderId || isNaN(orderId)) {
           throw new Error("Mã đơn hàng không hợp lệ");
         }
@@ -48,7 +50,6 @@ const Payment = () => {
           }
         );
 
-        // Kiểm tra dữ liệu trả về
         if (!response.data || !response.data.orderId) {
           throw new Error("Không tìm thấy thông tin đơn hàng");
         }
@@ -64,7 +65,6 @@ const Payment = () => {
     fetchOrder();
   }, [orderId, navigate]);
 
-  // Lấy danh sách mã giảm giá từ API
   useEffect(() => {
     const fetchPromotions = async () => {
       try {
@@ -81,7 +81,6 @@ const Payment = () => {
             },
           }
         );
-        console.log("Promotions API Response:", response.data); // Debug dữ liệu trả về
         if (response.data && Array.isArray(response.data.$values)) {
           setPromotions(response.data.$values);
         } else {
@@ -94,14 +93,12 @@ const Payment = () => {
     fetchPromotions();
   }, [navigate]);
 
-  // Tính tổng tiền của đơn hàng
   const totalAmount =
     order?.orderItems?.$values?.reduce(
       (total, item) => total + item.totalPrice * item.quantity,
       0
     ) || 0;
 
-  // Tính toán tổng tiền sau khi áp dụng giảm giá và VAT
   useEffect(() => {
     if (selectedPromotion) {
       const selectedPromo = promotions.find(
@@ -128,7 +125,65 @@ const Payment = () => {
     }
   }, [selectedPromotion, totalAmount, promotions]);
 
-  // Hiển thị loading khi đang tải dữ liệu
+  const handlePaymentSubmit = (e) => {
+    e.preventDefault();
+    if (paymentMethod === "Stripe Card") {
+      openPaymentModal();
+    } else {
+      openCashConfirmation(); // Open cash confirmation popup instead of alert
+    }
+  };
+
+  const handleCashPaymentConfirm = async () => {
+    if (!isCashReceived) {
+      alert("Vui lòng xác nhận đã nhận tiền mặt từ khách hàng");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("authToken");
+      const paymentData = {
+        OrderId: parseInt(orderId),
+        PaymentMethod: "Cash",
+        Amount: parseFloat(finalTotal.toFixed(2)), // Ensure proper decimal format
+        Currency: "USD",
+        Status: "Completed",
+      };
+
+      // Debug output
+      console.log("Payment Data:", JSON.stringify(paymentData, null, 2));
+
+      const response = await axios({
+        method: "post",
+        url: "http://localhost:5112/api/payment/process-payment",
+        data: paymentData,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+        transformRequest: [(data) => JSON.stringify(data)],
+      });
+
+      if (response.status === 200) {
+        alert("Thanh toán bằng tiền mặt thành công!");
+        navigate("/order-customer");
+      } else {
+        throw new Error(response.data.message || "Thanh toán thất bại");
+      }
+    } catch (error) {
+      console.error("Payment Error Details:", {
+        error: error.message,
+        response: error.response?.data,
+        config: error.config,
+      });
+
+      alert(`Lỗi thanh toán: ${error.response?.data?.error || error.message}`);
+    } finally {
+      closeCashConfirmation();
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -140,17 +195,6 @@ const Payment = () => {
     );
   }
 
-  const handlePaymentSubmit = (e) => {
-    e.preventDefault();
-    if (paymentMethod === "Stripe Card") {
-      openPaymentModal(); // Mở modal nếu phương thức thanh toán là thẻ tín dụng
-    } else {
-      alert("Thanh toán bằng tiền mặt đã được chọn."); // Xử lý thanh toán tiền mặt
-    }
-  };
-
-  // Hiển thị lỗi nếu có
-  // Trong component Payment
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
@@ -159,7 +203,6 @@ const Payment = () => {
           <h2 className="text-xl font-bold text-center mb-4">
             Chưa có đơn hàng cần thanh toán
           </h2>
-
           <div className="flex flex-col space-y-3">
             <button
               onClick={() => navigate("/order-customer")}
@@ -183,7 +226,7 @@ const Payment = () => {
     <>
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-50 to-purple-50 p-4">
         <div className="flex flex-col md:flex-row w-full h-full max-w-6xl bg-white rounded-lg shadow-lg overflow-hidden">
-          {/* Section hiển thị danh sách sản phẩm */}
+          {/* Product list section */}
           <div className="w-full md:w-1/2 p-8 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg">
             <h3 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
               🛒 Danh Sách Sản Phẩm
@@ -212,7 +255,8 @@ const Payment = () => {
                           {item.menuItem?.name || "Không có tên"}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-800">
-                          {(item.totalPrice * item.quantity).toLocaleString()}₫
+                          {(item.totalPrice * item.quantity).toLocaleString()}{" "}
+                          VND
                         </td>
                       </tr>
                     ))
@@ -229,12 +273,11 @@ const Payment = () => {
                 </tbody>
               </table>
             </div>
-            {/* Hiển thị tổng tiền */}
             <div className="mt-8">
               <div className="flex justify-between items-center py-3 border-t border-b border-gray-200">
                 <span className="font-medium text-gray-700">Tổng Tiền:</span>
                 <span className="font-semibold text-lg text-gray-800">
-                  {totalAmount.toLocaleString()} VND
+                  {totalAmount.toLocaleString()} USD
                 </span>
               </div>
               {discountPercentage > 0 && (
@@ -243,20 +286,20 @@ const Payment = () => {
                     Giảm giá ({discountPercentage}%):
                   </span>
                   <span className="font-semibold text-red-500">
-                    -{discountAmount.toLocaleString()} VND
+                    -{discountAmount.toLocaleString()} USD
                   </span>
                 </div>
               )}
               <div className="flex justify-between items-center py-3">
                 <span className="text-gray-700">Số tiền sau giảm giá:</span>
                 <span className="font-semibold text-gray-800">
-                  {subtotalAfterDiscount.toLocaleString()} VND
+                  {subtotalAfterDiscount.toLocaleString()} USD
                 </span>
               </div>
               <div className="flex justify-between items-center py-3">
                 <span className="text-gray-700">VAT (10%):</span>
                 <span className="font-semibold text-green-600">
-                  +{vatAmount.toLocaleString()} VND
+                  +{vatAmount.toLocaleString()} USD
                 </span>
               </div>
               <div className="flex justify-between items-center py-3 border-t border-gray-200">
@@ -264,13 +307,13 @@ const Payment = () => {
                   Tổng tiền cuối cùng:
                 </span>
                 <span className="font-bold text-2xl text-blue-600">
-                  {finalTotal.toLocaleString()} VND
+                  {finalTotal.toLocaleString()} USD
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Section hiển thị thông tin thanh toán */}
+          {/* Payment information section */}
           <div className="w-full md:w-1/2 p-8">
             <h3 className="text-2xl font-semibold text-gray-800 mb-8">
               💳 Thông Tin Thanh Toán
@@ -354,7 +397,7 @@ const Payment = () => {
           </div>
         </div>
 
-        {/* Modal thanh toán thẻ tín dụng */}
+        {/* Credit card payment modal */}
         {isPaymentModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-8 w-full max-w-md">
@@ -388,6 +431,80 @@ const Payment = () => {
                 }}
                 onClose={closePaymentModal}
               />
+            </div>
+          </div>
+        )}
+
+        {/* Cash payment confirmation modal */}
+        {isCashConfirmationOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 w-full max-w-md">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-semibold">
+                  Xác Nhận Thanh Toán Tiền Mặt
+                </h2>
+                <button
+                  onClick={closeCashConfirmation}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-lg font-medium mb-2">
+                  Tổng số tiền cần thanh toán:
+                </p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {finalTotal.toLocaleString()} USD
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={isCashReceived}
+                    onChange={(e) => setIsCashReceived(e.target.checked)}
+                    className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-gray-700">
+                    Tôi đã nhận đủ tiền mặt từ khách hàng
+                  </span>
+                </label>
+              </div>
+
+              <div className="flex space-x-4">
+                <button
+                  onClick={closeCashConfirmation}
+                  className="flex-1 py-3 px-4 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+                >
+                  Quay Lại
+                </button>
+                <button
+                  onClick={handleCashPaymentConfirm}
+                  disabled={!isCashReceived}
+                  className={`flex-1 py-3 px-4 font-medium rounded-lg transition-colors ${
+                    isCashReceived
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                >
+                  Xác Nhận Thanh Toán
+                </button>
+              </div>
             </div>
           </div>
         )}

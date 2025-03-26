@@ -344,9 +344,7 @@ const OrderCustomer = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h2 className="text-center text-2xl font-bold text-blue-600 mb-6">
-        Giỏ Hàng
-      </h2>
+      <h2 className="text-center fw-bold text-primary">Giỏ Hàng</h2>
 
       {/* Hiển thị thông báo thành công */}
       {successMessage && (
@@ -414,7 +412,7 @@ const OrderCustomer = () => {
                     <strong>Số món:</strong> {items.length}
                   </p>
                   <p className="text-gray-700 mb-3">
-                    <strong>Tổng tiền:</strong> {calculateTotal(items)}đ
+                    <strong>Tổng tiền:</strong> {calculateTotal(items)} USD
                   </p>
                   <div className="flex justify-between mt-4">
                     <button
@@ -471,7 +469,7 @@ const OrderCustomer = () => {
                 <div>
                   <h6 className="font-semibold">{item.name}</h6>
                   <p className="text-gray-700">
-                    {item.price.toLocaleString("vi-VN")}đ
+                    {item.price.toLocaleString("vi-VN")} USD
                   </p>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -503,7 +501,7 @@ const OrderCustomer = () => {
           )}
 
           <div className="text-right mt-4 font-bold">
-            Tổng tiền: {calculateTotal(tempCartData)}đ
+            Tổng tiền: {calculateTotal(tempCartData)} USD
           </div>
         </Modal.Body>
 
@@ -621,7 +619,7 @@ const OrderCustomer = () => {
               </p>
               <p>
                 <strong>Tổng tiền:</strong>{" "}
-                {calculateTotal(cartData[selectedTable])}đ
+                {calculateTotal(cartData[selectedTable])} USD
               </p>
               <p>
                 <strong>Khách hàng:</strong>{" "}
