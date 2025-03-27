@@ -6,7 +6,6 @@ import PaymentFormWrapper from "../../../components/paymentComponents/PaymentFor
 const Payment = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
-
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,6 +18,7 @@ const Payment = () => {
   const [finalTotal, setFinalTotal] = useState(0);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
+  const [selectedPromotionId, setSelectedPromotionId] = useState(null);
   // New state for cash payment confirmation
   const [isCashConfirmationOpen, setIsCashConfirmationOpen] = useState(false);
   const [isCashReceived, setIsCashReceived] = useState(false);
@@ -40,7 +40,6 @@ const Payment = () => {
           navigate("/login");
           return;
         }
-
         const response = await axios.get(
           `http://localhost:5112/api/order/get-order-by-id/${orderId}`,
           {
@@ -125,6 +124,62 @@ const Payment = () => {
     }
   }, [selectedPromotion, totalAmount, promotions]);
 
+  const handlePromotionChange = async (e) => {
+    const selectedPromoName = e.target.value;
+    setSelectedPromotion(selectedPromoName);
+
+    // Tìm và lưu promotionId tương ứng
+    const selectedPromo = promotions.find(
+      (promo) => promo.name === selectedPromoName
+    );
+
+    if (!selectedPromo) {
+      setSelectedPromotionId(null);
+      return;
+    }
+
+    setSelectedPromotionId(selectedPromo.promotionId);
+
+    try {
+      const token = localStorage.getItem("authToken");
+      // Gọi API để áp dụng promotion vào order
+      await axios.post(
+        "http://localhost:5112/api/Promotions/apply-promotion",
+        {
+          OrderId: parseInt(orderId),
+          PromotionId: selectedPromo.promotionId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // Cập nhật UI với thông tin giảm giá mới
+      const discount = totalAmount * (selectedPromo.discountPercentage / 100);
+      setDiscountAmount(discount);
+      const subtotal = totalAmount - discount;
+      setSubtotalAfterDiscount(subtotal);
+      const vat = subtotal * 0.1;
+      setVatAmount(vat);
+      const final = subtotal + vat;
+      setFinalTotal(final);
+      setDiscountPercentage(selectedPromo.discountPercentage);
+    } catch (error) {
+      console.error("Lỗi khi áp dụng mã giảm giá:", error);
+      alert(
+        `Không thể áp dụng mã giảm giá: ${
+          error.response?.data?.error || error.message
+        }`
+      );
+      // Reset selection nếu có lỗi
+      setSelectedPromotion("");
+      setSelectedPromotionId(null);
+    }
+  };
+
   const handlePaymentSubmit = (e) => {
     e.preventDefault();
     if (paymentMethod === "Stripe Card") {
@@ -148,6 +203,7 @@ const Payment = () => {
         Amount: parseFloat(finalTotal.toFixed(2)), // Ensure proper decimal format
         Currency: "USD",
         Status: "Completed",
+        PromotionId: selectedPromotionId,
       };
 
       // Debug output
@@ -359,7 +415,7 @@ const Payment = () => {
                 <select
                   id="promotionCode"
                   value={selectedPromotion}
-                  onChange={(e) => setSelectedPromotion(e.target.value)}
+                  onChange={handlePromotionChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 >
                   <option value="">Chọn mã giảm giá</option>

@@ -48,9 +48,6 @@ const OrderCustomer = () => {
           }
         );
 
-        console.log("API Response - Customers:", response.data); // Log dữ liệu từ API
-
-        // Kiểm tra xem response.data.customers.$values có tồn tại và là một mảng không
         if (
           !response.data.customers ||
           !Array.isArray(response.data.customers.$values)
@@ -63,8 +60,6 @@ const OrderCustomer = () => {
         const filteredCustomers = response.data.customers.$values.filter(
           (user) => user.roleId === 5
         );
-
-        console.log("Filtered Customers:", filteredCustomers); // Log danh sách đã lọc
 
         // Lưu danh sách đã lọc vào state
         setCustomers(filteredCustomers);
@@ -98,8 +93,6 @@ const OrderCustomer = () => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-
-        console.log("Kitchen staff data:", response.data); // Kiểm tra dữ liệu từ API
 
         // Truy cập vào thuộc tính $values để lấy danh sách nhân viên bếp
         if (Array.isArray(response.data.$values)) {
@@ -261,8 +254,6 @@ const OrderCustomer = () => {
           },
         }
       );
-
-      console.log("Full response:", response.data);
 
       // Cải tiến việc lấy orderId
       let newOrderId = null;

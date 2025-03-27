@@ -13,11 +13,11 @@ const PaymentStatus = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [successDetails, setSuccessDetails] = useState(null);
+  const [promotions, setPromotions] = useState([]); // Thêm state cho promotions
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    // Check navigation state
     if (location.state?.paymentSuccess) {
       setPaymentSuccess(true);
       setSuccessDetails({
@@ -31,14 +31,17 @@ const PaymentStatus = () => {
       return () => clearTimeout(timer);
     }
 
-    const fetchOrders = async () => {
+    const fetchData = async () => {
+      // Đổi tên hàm để phản ánh việc lấy cả orders và promotions
       try {
         const token = localStorage.getItem("authToken");
         if (!token) {
           navigate("/login");
           return;
         }
-        const response = await axios.get(
+
+        // Lấy danh sách đơn hàng
+        const ordersResponse = await axios.get(
           "http://localhost:5112/api/order/get-all-orders-with-payment-status",
           {
             headers: {
@@ -46,25 +49,41 @@ const PaymentStatus = () => {
             },
           }
         );
-        const ordersData = Array.isArray(response.data)
-          ? response.data
-          : Array.isArray(response.data?.$values)
-          ? response.data.$values
+        const ordersData = Array.isArray(ordersResponse.data)
+          ? ordersResponse.data
+          : Array.isArray(ordersResponse.data?.$values)
+          ? ordersResponse.data.$values
           : [];
         const processedOrders = ordersData.map((order) => ({
           ...order,
           orderItems: order.orderItems?.$values || order.orderItems || [],
         }));
         setOrders(processedOrders);
+
+        // Lấy danh sách khuyến mãi
+        const promotionsResponse = await axios.get(
+          "http://localhost:5112/api/Promotions/get-all-promotions",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const promotionsData = Array.isArray(promotionsResponse.data)
+          ? promotionsResponse.data
+          : Array.isArray(promotionsResponse.data?.$values)
+          ? promotionsResponse.data.$values
+          : [];
+        setPromotions(promotionsData);
       } catch (err) {
         console.error("Fetch error:", err);
-        setError(err.message || "Failed to fetch orders");
+        setError(err.message || "Failed to fetch data");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchOrders();
+    fetchData();
   }, [navigate, location.state]);
 
   const fetchOrderDetails = async (orderId) => {
@@ -118,7 +137,8 @@ const PaymentStatus = () => {
     }
   };
 
-  const calculateTotalAmount = (orderItems) => {
+  // Tính tổng tiền gốc (trước giảm giá)
+  const calculateOriginalTotal = (orderItems) => {
     if (!orderItems || !Array.isArray(orderItems)) return 0;
     return orderItems.reduce(
       (total, item) => total + (item.totalPrice || 0) * (item.quantity || 1),
@@ -126,23 +146,51 @@ const PaymentStatus = () => {
     );
   };
 
+  // Tính tổng tiền sau khi áp dụng giảm giá
+  const calculateDiscountedTotal = (orderItems, promotionId) => {
+    const originalTotal = calculateOriginalTotal(orderItems);
+    const promotion = getPromotionDetails(promotionId);
+    const discountPercentage = promotion.discount;
+    const discountAmount = originalTotal * (discountPercentage / 100);
+    return originalTotal - discountAmount;
+  };
+
+  // Hàm lấy thông tin khuyến mãi
+  const getPromotionDetails = (promotionId) => {
+    const promotion = promotions.find(
+      (promo) => promo.promotionId === promotionId
+    );
+    return promotion
+      ? {
+          name: promotion.promotionName,
+          discount: promotion.discountPercentage,
+        }
+      : { name: "Không có mã giảm giá", discount: 0 };
+  };
+
   const exportOrderToExcel = () => {
     if (!orderDetails) return;
 
-    // Prepare data for Excel export
+    const promotionDetails = getPromotionDetails(orderDetails.promotionId);
+    const originalTotal = calculateOriginalTotal(orderDetails.orderItems);
+    const discountedTotal = calculateDiscountedTotal(
+      orderDetails.orderItems,
+      orderDetails.promotionId
+    );
+
     const orderData = [
       ["Bàn số", selectedOrder.tableId],
       ["Trạng thái", selectedOrder.paymentStatus],
       ["Ngày tạo", new Date(selectedOrder.createdAt).toLocaleString()],
-      ["Mã giảm giá", orderDetails.promotionCode || "Không có mã giảm giá"],
+      ["Phần trăm giảm giá", `${promotionDetails.discount}%`],
       ["Nhân viên phục vụ", orderDetails.staff?.fullName || "Chưa chỉ định"],
       ["Nhân viên bếp", orderDetails.kitchenStaff?.fullName || "Chưa chỉ định"],
-      ["", ""], // Empty row for separation
+      ["", ""], // Dòng trống phân cách
       ["Danh sách món ăn", "", "", "", ""],
       ["Tên món", "Số lượng", "Đơn giá", "Thành tiền"],
     ];
 
-    // Add menu items
+    // Thêm danh sách món ăn
     orderDetails.orderItems.forEach((item) => {
       orderData.push([
         item.menuItem?.name || "Không có tên",
@@ -152,15 +200,17 @@ const PaymentStatus = () => {
       ]);
     });
 
-    // Add total
-    orderData.push(["Tổng cộng", "", "", `${calculateTotalAmount(orderDetails.orderItems)} VND`]);
+    // Thêm tổng tiền gốc và tổng tiền sau giảm giá vào cuối
+    orderData.push(["", ""]); // Dòng trống phân cách trước tổng tiền
+    orderData.push(["Tổng tiền gốc", `${originalTotal.toLocaleString()} VND`]);
+    orderData.push([
+      "Tổng tiền sau giảm giá",
+      `${discountedTotal.toLocaleString()} VND`,
+    ]);
 
-    // Create workbook and worksheet
     const worksheet = XLSX.utils.aoa_to_sheet(orderData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Order Details");
-
-    // Generate Excel file
     XLSX.writeFile(workbook, `Order_${selectedOrder.orderId}.xlsx`);
   };
 
@@ -186,7 +236,6 @@ const PaymentStatus = () => {
         Trạng thái thanh toán
       </h2>
 
-      {/* Success Notification */}
       {paymentSuccess && successDetails && (
         <div className="fixed top-4 right-4 z-50">
           <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-lg max-w-md">
@@ -259,7 +308,10 @@ const PaymentStatus = () => {
                     <p className="text-gray-600">Bàn: {order.tableId}</p>
                     <p className="text-gray-600">
                       Tổng tiền:{" "}
-                      {calculateTotalAmount(order.orderItems).toLocaleString()}{" "}
+                      {calculateDiscountedTotal(
+                        order.orderItems,
+                        order.promotionId
+                      ).toLocaleString()}{" "}
                       USD
                     </p>
                   </div>
@@ -283,7 +335,6 @@ const PaymentStatus = () => {
         </div>
       )}
 
-      {/* Order Details Modal */}
       {isModalOpen && selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -339,10 +390,16 @@ const PaymentStatus = () => {
                         {new Date(selectedOrder.createdAt).toLocaleString()}
                       </p>
                     </div>
+
                     <div>
-                      <p className="text-gray-600">Mã giảm Giá:</p>
+                      <p className="text-gray-600">Phần trăm giảm giá:</p>
                       <p className="font-medium">
-                        {orderDetails?.promotionCode || "Không có mã giảm giá"}
+                        {orderDetails?.promotionId
+                          ? `${
+                              getPromotionDetails(orderDetails.promotionId)
+                                .discount
+                            }%`
+                          : "0%"}
                       </p>
                     </div>
                     {orderDetails && (
@@ -398,13 +455,13 @@ const PaymentStatus = () => {
                                 {item.quantity}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
-                                {item.totalPrice?.toLocaleString() || "0"} VND
+                                {item.totalPrice?.toLocaleString() || "0"} USD
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 {(
                                   (item.quantity || 0) * (item.totalPrice || 0)
                                 ).toLocaleString()}{" "}
-                                VND
+                                USD
                               </td>
                             </tr>
                           ))
@@ -425,22 +482,38 @@ const PaymentStatus = () => {
                             colSpan="3"
                             className="px-6 py-4 text-right font-medium text-gray-500"
                           >
-                            Tổng cộng:
+                            Tổng tiền gốc:
                           </td>
                           <td className="px-6 py-4 font-bold">
                             {orderDetails
-                              ? calculateTotalAmount(
+                              ? calculateOriginalTotal(
                                   orderDetails.orderItems
                                 ).toLocaleString()
                               : "0"}{" "}
-                            VND
+                            USD
+                          </td>
+                        </tr>
+                        <tr>
+                          <td
+                            colSpan="3"
+                            className="px-6 py-4 text-right font-medium text-gray-500"
+                          >
+                            Tổng tiền sau giảm giá:
+                          </td>
+                          <td className="px-6 py-4 font-bold">
+                            {orderDetails
+                              ? calculateDiscountedTotal(
+                                  orderDetails.orderItems,
+                                  orderDetails.promotionId
+                                ).toLocaleString()
+                              : "0"}{" "}
+                            USD
                           </td>
                         </tr>
                       </tfoot>
                     </table>
                   </div>
 
-                  {/* Export Button */}
                   <div className="mt-6 pt-4 border-t border-gray-200 flex justify-start">
                     <button
                       onClick={exportOrderToExcel}
@@ -450,7 +523,6 @@ const PaymentStatus = () => {
                     </button>
                   </div>
 
-                  {/* Close Button */}
                   <div className="mt-6 pt-4 border-t border-gray-200 flex justify-end">
                     <button
                       onClick={closeModal}
