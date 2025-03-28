@@ -71,6 +71,7 @@ const Payment = () => {
           throw new Error("Không tìm thấy thông tin đơn hàng");
         }
 
+        console.log("Order Data:", response.data); // Log để kiểm tra customerId
         setOrder(response.data);
       } catch (err) {
         setError(err.message || "Đã xảy ra lỗi khi tải thông tin đơn hàng.");
@@ -205,7 +206,7 @@ const Payment = () => {
     if (paymentMethod === "Stripe Card") {
       openPaymentModal();
     } else {
-      openCashConfirmation(); // Open cash confirmation popup instead of alert
+      openCashConfirmation();
     }
   };
 
@@ -226,24 +227,23 @@ const Payment = () => {
         PromotionId: selectedPromotionId,
       };
 
-      // Debug output
       console.log("Payment Data:", JSON.stringify(paymentData, null, 2));
 
-      const response = await axios({
-        method: "post",
-        url: "http://localhost:5112/api/payment/process-payment",
-        data: paymentData,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-        transformRequest: [(data) => JSON.stringify(data)],
-      });
+      const response = await axios.post(
+        "http://localhost:5112/api/payment/process-payment",
+        paymentData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }
+      );
 
       if (response.status === 200) {
         alert("Thanh toán bằng tiền mặt thành công!");
-        navigate("/order-customer");
+        navigate(`/feedback/create/${orderId}/${order.customerId}`); // Chuyển hướng đến feedback
       } else {
         throw new Error(response.data.message || "Thanh toán thất bại");
       }
@@ -253,7 +253,6 @@ const Payment = () => {
         response: error.response?.data,
         config: error.config,
       });
-
       alert(`Lỗi thanh toán: ${error.response?.data?.error || error.message}`);
     } finally {
       closeCashConfirmation();
@@ -332,7 +331,7 @@ const Payment = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-800">
                           {(item.totalPrice * item.quantity).toLocaleString()}{" "}
-                          VND
+                          USD {/* Đổi sang USD để khớp với back-end */}
                         </td>
                       </tr>
                     ))
@@ -502,7 +501,7 @@ const Payment = () => {
                 orderId={orderId}
                 amount={finalTotal}
                 onPaymentSuccess={(result) => {
-                  navigate("/order-customer");
+                  navigate(`/feedback/create/${orderId}/${order.customerId}`); // Chuyển hướng đến feedback
                   closePaymentModal();
                 }}
                 onClose={closePaymentModal}
