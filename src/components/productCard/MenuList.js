@@ -54,6 +54,15 @@ const MenuList = () => {
   const currentItems = filteredMenu.slice(indexOfFirstItem, indexOfLastItem);
 
   const addToCart = (menuItem) => {
+    // Chỉ kiểm tra token thôi
+    const token = localStorage.getItem("authToken");
+
+    if (!token) {
+      alert("Vui lòng đăng nhập trước khi đặt món.");
+      return;
+    }
+
+    // Kiểm tra bàn
     const selectedTable = JSON.parse(localStorage.getItem("selectedTable"));
 
     if (!selectedTable) {
@@ -61,6 +70,7 @@ const MenuList = () => {
       return;
     }
 
+    // Tiếp tục logic thêm vào giỏ hàng
     const cart = JSON.parse(localStorage.getItem("cart")) || {};
     const tableCart = cart[selectedTable.tableId] || [];
     const existingItem = tableCart.find(

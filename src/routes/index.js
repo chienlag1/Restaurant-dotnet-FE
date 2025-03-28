@@ -26,12 +26,17 @@ import PromotionView from "../pages/staff/promotion";
 import Payment from "../pages/staff/payment";
 import PaymentFormWrapper from "../components/paymentComponents/PaymentForm";
 import PaymentStatus from "../pages/staff/payment/paymentStatus";
+import AddCustomer from "../pages/staff/order/addCustomer";
 
 const Routes = () => {
   const elements = useRoutes([
     {
       path: "/",
       element: <LayoutUser Page={HomePage} />,
+    },
+    {
+      path: "/add-customer",
+      element: <LayoutStaff Page={AddCustomer} />,
     },
     {
       path: "/payment-status",

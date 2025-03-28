@@ -4,7 +4,11 @@ import axios from "axios";
 import PaymentFormWrapper from "../../../components/paymentComponents/PaymentForm";
 
 const Payment = () => {
-  const { orderId } = useParams();
+  const { orderId: orderIdFromParams } = useParams();
+  // Sử dụng state để quản lý orderId từ URL hoặc localStorage
+  const [orderId, setOrderId] = useState(() => {
+    return orderIdFromParams || localStorage.getItem("lastOrderId") || null;
+  });
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,6 +33,18 @@ const Payment = () => {
   const closeCashConfirmation = () => setIsCashConfirmationOpen(false);
 
   useEffect(() => {
+    if (!orderId || isNaN(orderId)) {
+      const savedOrderId = localStorage.getItem("lastOrderId");
+      if (savedOrderId && !isNaN(savedOrderId)) {
+        setOrderId(savedOrderId);
+      } else {
+        setError("Không tìm thấy đơn hàng cần thanh toán");
+        setLoading(false);
+      }
+    }
+  }, [orderId]);
+
+  useEffect(() => {
     const fetchOrder = async () => {
       try {
         if (!orderId || isNaN(orderId)) {
@@ -50,6 +66,8 @@ const Payment = () => {
         );
 
         if (!response.data || !response.data.orderId) {
+          // Xóa orderId không hợp lệ khỏi localStorage
+          localStorage.removeItem("lastOrderId");
           throw new Error("Không tìm thấy thông tin đơn hàng");
         }
 
@@ -61,7 +79,9 @@ const Payment = () => {
       }
     };
 
-    fetchOrder();
+    if (orderId && !isNaN(orderId)) {
+      fetchOrder();
+    }
   }, [orderId, navigate]);
 
   useEffect(() => {

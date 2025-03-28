@@ -272,6 +272,7 @@ const OrderCustomer = () => {
       if (!newOrderId || isNaN(newOrderId)) {
         throw new Error("Không thể trích xuất mã đơn hàng");
       }
+      localStorage.setItem("lastOrderId", newOrderId);
 
       // Cập nhật giỏ hàng
       const updatedCart = { ...cartData };
@@ -533,7 +534,7 @@ const OrderCustomer = () => {
                   <option value="">Chọn khách hàng </option>
                   {filteredCustomers.map((customer) => (
                     <option key={customer.userId} value={customer.userId}>
-                      {customer.fullName} ({customer.phone || "Không có SĐT"})
+                      {customer.fullName}
                     </option>
                   ))}
                 </select>

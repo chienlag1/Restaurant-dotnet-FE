@@ -11,7 +11,7 @@ const HomePage = () => {
         top: 0,
         left: 0,
         height: "100%",
-        backgroundImage: `url("https://media.cooky.vn/images/blog-2016/nghe-thuat-trinh-bay-va-chup-anh-mon-an%202.jpg")`,
+        backgroundImage: `url("https://ipos.vn/wp-content/uploads/2019/08/thiet-ke-nha-hang-5.jpg")`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         filter: "brightness(50%)",
