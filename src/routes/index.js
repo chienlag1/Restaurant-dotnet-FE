@@ -25,6 +25,10 @@ import PromotionList from "../pages/admin/promotionManager/PromotionList";
 import PromotionView from "../pages/staff/promotion";
 import Payment from "../pages/staff/payment";
 import PaymentFormWrapper from "../components/paymentComponents/PaymentForm";
+import PaymentStatus from "../pages/staff/payment/paymentStatus";
+import CreateFeedback from "../pages/Feedback/CreateFeedback";
+import FeedbackManagement from "../pages/admin/Feedback/FeedbackManagement";
+import AddCustomer from "../pages/staff/order/addCustomer";
 
 const Routes = () => {
   const elements = useRoutes([
@@ -33,12 +37,24 @@ const Routes = () => {
       element: <LayoutUser Page={HomePage} />,
     },
     {
+      path: "/add-customer",
+      element: <LayoutStaff Page={AddCustomer} />,
+    },
+    {
+      path: "/payment-status",
+      element: <LayoutStaff Page={PaymentStatus} />,
+    },
+    {
       path: "/pay",
       element: <PaymentFormWrapper></PaymentFormWrapper>,
     },
     {
       path: "/payment/:orderId",
       element: <LayoutStaff Page={Payment} />,
+    },
+    {
+      path: "/feedback/create/:orderId/:customerId",
+      element: <CreateFeedback />,
     },
     {
       path: "/promotion",
@@ -52,7 +68,6 @@ const Routes = () => {
       path: "/menu-customer",
       element: <LayoutStaff Page={Menu} />,
     },
-
     {
       path: "/promotion-management",
       element: <LayoutAdmin Page={Promotion} />,
@@ -61,7 +76,6 @@ const Routes = () => {
       path: "/user-management",
       element: <LayoutAdmin Page={UserManager} />,
     },
-
     {
       path: "/order-management",
       element: <LayoutAdmin Page={Order} />,
@@ -82,7 +96,10 @@ const Routes = () => {
       path: "/staff-dashboard",
       element: <LayoutStaff Page={Staff} />,
     },
-
+    {
+      path: "/feedback-management",
+      element: <LayoutAdmin Page={FeedbackManagement} />, // Sửa từ page thành Page
+    },
     {
       path: "/login",
       element: <LoginPage />,
@@ -95,12 +112,10 @@ const Routes = () => {
       path: "/forgot-password",
       element: <ForgotPasswordPage />,
     },
-
     {
       path: "/reset-password/",
       element: <ResetPasswordPage />,
     },
-
     {
       path: "/staff-management",
       element: <LayoutAdmin Page={StaffManagement} />,
@@ -134,4 +149,5 @@ const Routes = () => {
   ]);
   return <div>{elements}</div>;
 };
+
 export default Routes;

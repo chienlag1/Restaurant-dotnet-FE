@@ -41,7 +41,7 @@ const Order = () => {
 
       try {
         const response = await axios.get(
-          "http://localhost:5112/api/order/get-all-orders",
+          "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/order/get-all-orders",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -80,7 +80,7 @@ const Order = () => {
 
       try {
         const response = await axios.get(
-          "http://localhost:5112/api/staff/get-all-staff", // Get all staff
+          "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/staff/get-all-staff", // Get all staff
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -93,7 +93,7 @@ const Order = () => {
 
         // Now fetch kitchen staff separately
         const kitchenStaffResponse = await axios.get(
-          "http://localhost:5112/api/staff/get-all-kitchen-staff", // Get kitchen staff
+          "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/staff/get-all-kitchen-staff", // Get kitchen staff
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -123,7 +123,7 @@ const Order = () => {
       }
 
       const response = await axios.get(
-        `http://localhost:5112/api/order/get-order-by-id/${orderId}`,
+        `https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/order/get-order-by-id/${orderId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -182,60 +182,6 @@ const Order = () => {
     }
   };
 
-  // Save changes after editing
-  const handleSaveChanges = async () => {
-    if (!editedOrderDetails) return;
-
-    try {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        setError("Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.");
-        navigate("/login");
-        return;
-      }
-
-      // Kiểm tra và đảm bảo customerId không bị null
-      if (!editedOrderDetails.customerId) {
-        setError("Khách hàng không hợp lệ. Vui lòng kiểm tra lại.");
-        return;
-      }
-
-      // Tạo payload đúng với yêu cầu của API
-      const payload = {
-        customerId: editedOrderDetails.customerId, // Đảm bảo customerId có giá trị hợp lệ
-        orderItems: editedOrderDetails.orderItems.map((item) => ({
-          menuItemId: item.menuItem.menuItemId,
-          quantity: item.quantity,
-        })),
-        kitchenStaffId: editedOrderDetails.kitchenStaffId || null, // Nếu không có nhân viên bếp, set là null
-        staffId: editedOrderDetails.staffId || null, // Nếu không có nhân viên, set là null
-        status: editedOrderDetails.status || "Pending", // Mặc định là "Pending"
-        orderDate: new Date(editedOrderDetails.orderDate).toISOString(),
-      };
-
-      console.log("Payload gửi lên server:", payload); // Kiểm tra payload trước khi gửi
-
-      await axios.put(
-        `http://localhost:5112/api/order/update-order/${editedOrderDetails.orderId}`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setSuccessMessage("Đơn hàng đã được cập nhật thành công!");
-      setShowDetailModal(false);
-    } catch (error) {
-      console.error("Error updating order:", error);
-      if (error.response) {
-        console.error("Phản hồi từ server:", error.response.data);
-      }
-      setError("Cập nhật đơn hàng thất bại. Vui lòng thử lại sau.");
-    }
-  };
-
   // Handle delete order
   const handleDeleteOrder = async (orderId) => {
     const confirmDelete = window.confirm(
@@ -252,7 +198,7 @@ const Order = () => {
       }
 
       await axios.delete(
-        `http://localhost:5112/api/order/delete-order/${orderId}`,
+        `https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/order/delete-order/${orderId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -465,9 +411,6 @@ const Order = () => {
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
             Đóng
-          </Button>
-          <Button variant="primary" onClick={handleSaveChanges}>
-            Lưu thay đổi
           </Button>
         </Modal.Footer>
       </Modal>

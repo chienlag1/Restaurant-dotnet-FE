@@ -1,24 +1,17 @@
 import React, { createContext, useContext, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+// import { useEffect } from "react";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem("authToken");
-    if (!storedToken) {
-      navigate("/login");
-    }
-  }, [navigate]);
-
   const signup = async (FullName, Email, Password, roleId) => {
     try {
       const { data } = await axios.post(
-        "http://localhost:5112/api/auth/register",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/auth/register",
         { FullName, Email, Password, roleId }
       );
       return data;
@@ -29,7 +22,7 @@ export const AuthProvider = ({ children }) => {
 
   const verifyCode = async (email, code) => {
     try {
-      const { data } = await axios.post("http://localhost:5112/users/verify", {
+      const { data } = await axios.post("https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/users/verify", {
         email,
         code,
       });
@@ -42,7 +35,7 @@ export const AuthProvider = ({ children }) => {
   const resetPassword = async (email, newPassword) => {
     try {
       const { data } = await axios.post(
-        "http://localhost:5112/users/reset-password",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/users/reset-password",
         { email, newPassword }
       );
       return { success: data };
@@ -54,7 +47,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (Email, Password) => {
     try {
       const { data } = await axios.post(
-        "http://localhost:5112/api/auth/login",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/auth/login",
         { Email, Password }
       );
 

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Button } from "react-bootstrap";
-import AddUser from "./addUserManagement";
+import AddUser from "../../admin/userManager/addUserManagement";
 import Pagination from "../../../components/pagination";
 
-const UserManagement = () => {
+const AddCustomer = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -303,5 +303,4 @@ const UserManagement = () => {
     </div>
   );
 };
-
-export default UserManagement;
+export default AddCustomer;

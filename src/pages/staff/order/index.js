@@ -42,15 +42,12 @@ const OrderCustomer = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:5112/api/customer/search-customer?keyword=@",
+          "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/customer/search-customer?keyword=@",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
 
-        console.log("API Response - Customers:", response.data); // Log dữ liệu từ API
-
-        // Kiểm tra xem response.data.customers.$values có tồn tại và là một mảng không
         if (
           !response.data.customers ||
           !Array.isArray(response.data.customers.$values)
@@ -63,8 +60,6 @@ const OrderCustomer = () => {
         const filteredCustomers = response.data.customers.$values.filter(
           (user) => user.roleId === 5
         );
-
-        console.log("Filtered Customers:", filteredCustomers); // Log danh sách đã lọc
 
         // Lưu danh sách đã lọc vào state
         setCustomers(filteredCustomers);
@@ -93,13 +88,11 @@ const OrderCustomer = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:5112/api/staff/get-all-kitchen-staff",
+          "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/staff/get-all-kitchen-staff",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-
-        console.log("Kitchen staff data:", response.data); // Kiểm tra dữ liệu từ API
 
         // Truy cập vào thuộc tính $values để lấy danh sách nhân viên bếp
         if (Array.isArray(response.data.$values)) {
@@ -237,19 +230,22 @@ const OrderCustomer = () => {
         return;
       }
 
+      // Chuẩn bị dữ liệu đơn hàng
       const orderData = {
         customerId: customerId,
+        tableId: parseInt(tableId),
+        kitchenStaffId: kitchenStaffId,
         orderItems: cartData[tableId].map((item) => ({
           menuItemId: item.menuItemId,
           quantity: item.quantity,
+          totalPrice: item.price * item.quantity,
         })),
-        kitchenStaffId: kitchenStaffId,
-        tableId: parseInt(tableId),
+        status: "Pending",
+        createdAt: new Date().toISOString(),
       };
 
-      // Gọi API tạo đơn hàng
-      const createOrderResponse = await axios.post(
-        "http://localhost:5112/api/order/create-order",
+      const response = await axios.post(
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/order/create-order",
         orderData,
         {
           headers: {
@@ -259,53 +255,47 @@ const OrderCustomer = () => {
         }
       );
 
-      // Lấy orderId từ phản hồi của API (nếu có)
-      let newOrderId = createOrderResponse.data.orderId;
+      // Cải tiến việc lấy orderId
+      let newOrderId = null;
 
-      // Nếu API không trả về orderId, gọi API lấy danh sách đơn hàng để lấy đơn hàng mới nhất
-      if (!newOrderId) {
-        const ordersResponse = await axios.get(
-          "http://localhost:5112/api/order/get-all-orders",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        // Lọc ra đơn hàng mới nhất dựa trên thời gian tạo (createdAt)
-        const latestOrder = ordersResponse.data.$values.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        )[0];
-
-        if (!latestOrder) {
-          throw new Error("Không tìm thấy đơn hàng mới được tạo.");
-        }
-
-        newOrderId = latestOrder.orderId; // Gán lại giá trị cho newOrderId
+      // Ưu tiên kiểm tra các trường phổ biến
+      if (response.data.orderId) {
+        newOrderId = response.data.orderId;
+      } else if (response.data.order && response.data.order.orderId) {
+        newOrderId = response.data.order.orderId;
+      } else if (response.data.$id) {
+        // Nếu không tìm thấy, thử các trường khác
+        newOrderId = response.data.$id;
       }
 
-      // Cập nhật lại giỏ hàng
+      // Kiểm tra tính hợp lệ của orderId
+      if (!newOrderId || isNaN(newOrderId)) {
+        throw new Error("Không thể trích xuất mã đơn hàng");
+      }
+      localStorage.setItem("lastOrderId", newOrderId);
+
+      // Cập nhật giỏ hàng
       const updatedCart = { ...cartData };
       delete updatedCart[tableId];
       localStorage.setItem("cart", JSON.stringify(updatedCart));
       setCartData(updatedCart);
 
-      // Hiển thị thông báo thành công
+      // Hiển thị thông báo
       setSuccessMessage(
-        `Đặt hàng thành công cho bàn ${tableId}! Mã đơn hàng: ${
-          newOrderId || "N/A"
-        }`
+        `Đặt hàng thành công cho bàn ${tableId}! Mã đơn hàng: ${newOrderId}`
       );
-
-      // Chuyển hướng sang trang thanh toán với orderId
-      navigate(`/payment/${newOrderId}`);
-
       setShowConfirmModal(false);
+
+      // Chuyển hướng sang trang thanh toán
+      setTimeout(() => {
+        navigate(`/payment/${newOrderId}`);
+      }, 1000);
     } catch (err) {
       console.error("Lỗi khi đặt hàng:", err);
       const errorMessage =
-        err.response?.data?.message || "Đặt hàng thất bại. Vui lòng thử lại!";
+        err.response?.data?.message ||
+        err.message ||
+        "Đặt hàng thất bại. Vui lòng thử lại!";
       setError(errorMessage);
     } finally {
       setProcessingOrder(false);
@@ -346,9 +336,7 @@ const OrderCustomer = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h2 className="text-center text-2xl font-bold text-blue-600 mb-6">
-        Giỏ Hàng
-      </h2>
+      <h2 className="text-center fw-bold text-primary">Giỏ Hàng</h2>
 
       {/* Hiển thị thông báo thành công */}
       {successMessage && (
@@ -416,7 +404,7 @@ const OrderCustomer = () => {
                     <strong>Số món:</strong> {items.length}
                   </p>
                   <p className="text-gray-700 mb-3">
-                    <strong>Tổng tiền:</strong> {calculateTotal(items)}đ
+                    <strong>Tổng tiền:</strong> {calculateTotal(items)} USD
                   </p>
                   <div className="flex justify-between mt-4">
                     <button
@@ -473,7 +461,7 @@ const OrderCustomer = () => {
                 <div>
                   <h6 className="font-semibold">{item.name}</h6>
                   <p className="text-gray-700">
-                    {item.price.toLocaleString("vi-VN")}đ
+                    {item.price.toLocaleString("vi-VN")} USD
                   </p>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -505,7 +493,7 @@ const OrderCustomer = () => {
           )}
 
           <div className="text-right mt-4 font-bold">
-            Tổng tiền: {calculateTotal(tempCartData)}đ
+            Tổng tiền: {calculateTotal(tempCartData)} USD
           </div>
         </Modal.Body>
 
@@ -546,7 +534,7 @@ const OrderCustomer = () => {
                   <option value="">Chọn khách hàng </option>
                   {filteredCustomers.map((customer) => (
                     <option key={customer.userId} value={customer.userId}>
-                      {customer.fullName} ({customer.phone || "Không có SĐT"})
+                      {customer.fullName}
                     </option>
                   ))}
                 </select>
@@ -623,7 +611,7 @@ const OrderCustomer = () => {
               </p>
               <p>
                 <strong>Tổng tiền:</strong>{" "}
-                {calculateTotal(cartData[selectedTable])}đ
+                {calculateTotal(cartData[selectedTable])} USD
               </p>
               <p>
                 <strong>Khách hàng:</strong>{" "}

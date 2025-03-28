@@ -82,7 +82,7 @@ const MenuManagement = () => {
   const fetchMenuItems = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5112/api/menuitem/get-all-menuitems"
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/menuitem/get-all-menuitems"
       );
       const data = response.data?.$values || [];
       setMenuItems(data);
@@ -96,7 +96,7 @@ const MenuManagement = () => {
     try {
       const token = localStorage.getItem("authToken");
       const response = await axios.post(
-        "http://localhost:5112/api/menuitem/add-new-menuitem",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/menuitem/add-new-menuitem",
         newItem,
         {
           headers: {
@@ -131,7 +131,7 @@ const MenuManagement = () => {
     try {
       const token = localStorage.getItem("authToken");
       await axios.delete(
-        `http://localhost:5112/api/menuitem/delete-menuitem-by-id/${menuItemId}`,
+        `https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/menuitem/delete-menuitem-by-id/${menuItemId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

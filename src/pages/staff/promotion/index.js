@@ -24,15 +24,13 @@ const PromotionView = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        "http://localhost:5112/api/promotions/get-all-promotions",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/promotions/get-all-promotions",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("authToken")}`,
           },
         }
       );
-
-      console.log("API Response:", response.data);
 
       if (response.data && response.data.$values) {
         setPromotions(response.data.$values);

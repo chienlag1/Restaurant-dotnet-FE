@@ -13,7 +13,7 @@ export const StaffProvider = ({ children }) => {
     if (!token) return;
     try {
       const res = await axios.get(
-        "http://localhost:5112/api/staff/get-all-staff",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/staff/get-all-staff",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
