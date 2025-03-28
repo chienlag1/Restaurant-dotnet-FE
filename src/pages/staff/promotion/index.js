@@ -32,6 +32,8 @@ const PromotionView = () => {
         }
       );
 
+      console.log("API Response:", response.data);
+
       if (response.data && response.data.$values) {
         setPromotions(response.data.$values);
       } else {

@@ -5,6 +5,7 @@ import PaymentFormWrapper from "../../../components/paymentComponents/PaymentFor
 
 const Payment = () => {
   const { orderId: orderIdFromParams } = useParams();
+  // Sử dụng state để quản lý orderId từ URL hoặc localStorage
   const [orderId, setOrderId] = useState(() => {
     return orderIdFromParams || localStorage.getItem("lastOrderId") || null;
   });
@@ -70,6 +71,7 @@ const Payment = () => {
           throw new Error("Không tìm thấy thông tin đơn hàng");
         }
 
+        console.log("Order Data:", response.data); // Log để kiểm tra customerId
         setOrder(response.data);
       } catch (err) {
         setError(err.message || "Đã xảy ra lỗi khi tải thông tin đơn hàng.");
@@ -224,6 +226,8 @@ const Payment = () => {
         Status: "Completed",
         PromotionId: selectedPromotionId,
       };
+
+      console.log("Payment Data:", JSON.stringify(paymentData, null, 2));
 
       const response = await axios.post(
         "http://localhost:5112/api/payment/process-payment",

@@ -12,7 +12,7 @@ const TableManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [tableNumbers, setTableNumbers] = useState({}); // State để quản lý số bàn
-  const tablesPerPage = 8;
+  const tablesPerPage = 8; // Số bàn mỗi trang
 
   // Cập nhật danh sách hiển thị khi `tables` thay đổi
   useEffect(() => {

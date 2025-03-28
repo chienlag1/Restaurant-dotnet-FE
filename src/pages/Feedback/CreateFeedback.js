@@ -30,6 +30,8 @@ const CreateFeedback = () => {
         Rating: rating, // Khớp với FeedbackPostDTO.Rating
       };
 
+      console.log("Feedback Data:", JSON.stringify(feedbackData, null, 2)); // Log để kiểm tra
+
       const response = await axios.post(
         "http://localhost:5112/api/feedback/create-feedback",
         feedbackData,
@@ -50,9 +52,7 @@ const CreateFeedback = () => {
         error: err.message,
         response: err.response?.data,
       });
-      setError(
-        err.response?.data?.message || "Đã xảy ra lỗi khi gửi feedback."
-      );
+      setError(err.response?.data?.message || "Đã xảy ra lỗi khi gửi feedback.");
     } finally {
       setLoading(false);
     }
