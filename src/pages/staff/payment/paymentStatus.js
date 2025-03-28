@@ -306,14 +306,6 @@ const PaymentStatus = () => {
                       Đơn hàng #{order.orderId}
                     </h2>
                     <p className="text-gray-600">Bàn: {order.tableId}</p>
-                    <p className="text-gray-600">
-                      Tổng tiền:{" "}
-                      {calculateDiscountedTotal(
-                        order.orderItems,
-                        order.promotionId
-                      ).toLocaleString()}{" "}
-                      USD
-                    </p>
                   </div>
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(

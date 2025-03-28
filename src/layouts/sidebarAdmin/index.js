@@ -9,12 +9,9 @@ const SidebarAdmin = () => {
     <div className="h-screen w-64 bg-gray-900 text-white fixed top-0 left-0 flex flex-col shadow-lg">
       {/* Header */}
       <div className="py-5 px-6 bg-gray-800 text-xl font-semibold text-center uppercase tracking-wide">
-        <a
-          href="/"
-          className="text-white hover:text-gray-300 transition no-underline"
-        >
+        <h5 className="text-white hover:text-gray-300 transition no-underline">
           Restaurant
-        </a>
+        </h5>
       </div>
 
       {/* Menu */}
