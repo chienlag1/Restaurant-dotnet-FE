@@ -1,19 +1,19 @@
 import React, { createContext, useContext, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+// import { useEffect } from "react";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem("authToken");
-    if (!storedToken) {
-      navigate("/login");
-    }
-  }, [navigate]);
+  // useEffect(() => {
+  //   const storedToken = localStorage.getItem("authToken");
+  //   if (!storedToken) {
+  //     navigate("/login");
+  //   }
+  // }, [navigate]);
 
   const signup = async (FullName, Email, Password, roleId) => {
     try {
