@@ -42,7 +42,7 @@ const OrderCustomer = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:5112/api/customer/search-customer?keyword=@",
+          "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/customer/search-customer?keyword=@",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -88,7 +88,7 @@ const OrderCustomer = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:5112/api/staff/get-all-kitchen-staff",
+          "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/staff/get-all-kitchen-staff",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -245,7 +245,7 @@ const OrderCustomer = () => {
       };
 
       const response = await axios.post(
-        "http://localhost:5112/api/order/create-order",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/order/create-order",
         orderData,
         {
           headers: {

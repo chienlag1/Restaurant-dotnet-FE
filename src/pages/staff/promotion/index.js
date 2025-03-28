@@ -24,7 +24,7 @@ const PromotionView = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        "http://localhost:5112/api/promotions/get-all-promotions",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/promotions/get-all-promotions",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("authToken")}`,

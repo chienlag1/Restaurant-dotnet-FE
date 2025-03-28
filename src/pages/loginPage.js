@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import ChatbaseWidget from "./chatbase";
+
 const LoginPage = () => {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
@@ -104,7 +104,7 @@ const LoginPage = () => {
             </div>
           </div>
         </div>
-        <ChatbaseWidget />
+      
       </section>
     </>
   );

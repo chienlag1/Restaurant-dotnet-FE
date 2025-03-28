@@ -28,7 +28,7 @@ const TableManagement = () => {
       }
 
       const response = await axios.get(
-        "http://localhost:5112/api/tables/get-all-table",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/tables/get-all-table",
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -78,7 +78,7 @@ const TableManagement = () => {
       }
 
       const response = await axios.post(
-        "http://localhost:5112/api/tables/create-table",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/tables/create-table",
         {
           capacity: newTable.capacity,
           status: "Available", // ✅ Luôn đảm bảo status là "Available"
@@ -108,7 +108,7 @@ const TableManagement = () => {
       console.log("Updating table with status:", editingTable.status);
 
       await axios.put(
-        `http://localhost:5112/api/tables/update-table/${editingTable.tableId}`,
+        `https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/tables/update-table/${editingTable.tableId}`,
         {
           capacity: editingTable.capacity,
           status: editingTable.status,
@@ -176,7 +176,7 @@ const TableManagement = () => {
       }
 
       await axios.delete(
-        `http://localhost:5112/api/tables/delete-table/${tableId}`,
+        `https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/tables/delete-table/${tableId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

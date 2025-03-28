@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import Footer from "../layouts/footer";
 import MenuList from "../components/productCard/MenuList";
-
+import ChatbaseWidget from "../pages/chatbase";
 const HomePage = () => {
   const styles = useMemo(
     () => ({
@@ -96,7 +96,7 @@ const HomePage = () => {
         </h2>
         <MenuList />
       </div>
-
+      <ChatbaseWidget />
       <Footer />
     </div>
   );

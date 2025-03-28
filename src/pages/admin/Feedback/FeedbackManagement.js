@@ -33,7 +33,7 @@ const FeedbackManagement = () => {
       }
 
       const response = await axios.get(
-        "http://localhost:5112/api/feedback/get-all-feedback",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/feedback/get-all-feedback",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -69,7 +69,7 @@ const FeedbackManagement = () => {
       };
 
       await axios.put(
-        `http://localhost:5112/api/feedback/update-feedback-according-to-orderId/${feedbackId}`,
+        `https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/feedback/update-feedback-according-to-orderId/${feedbackId}`,
         updatedFeedback,
         {
           headers: {
@@ -96,7 +96,7 @@ const FeedbackManagement = () => {
       try {
         const token = localStorage.getItem("authToken");
         await axios.delete(
-          `http://localhost:5112/api/feedback/delete-feedback/${feedbackId}`,
+          `https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/feedback/delete-feedback/${feedbackId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

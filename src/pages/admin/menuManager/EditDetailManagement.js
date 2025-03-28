@@ -41,7 +41,7 @@ const EditDetailManagement = ({ selectedProduct, onClose, onUpdate }) => {
     try {
       const token = localStorage.getItem("authToken");
       await axios.put(
-        `http://localhost:5112/api/menuitem/update-menuitem-by-id/${editedProduct.menuItemId}`,
+        `https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/menuitem/update-menuitem-by-id/${editedProduct.menuItemId}`,
         editedProduct,
         {
           headers: {

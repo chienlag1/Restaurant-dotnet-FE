@@ -41,7 +41,7 @@ const Order = () => {
 
       try {
         const response = await axios.get(
-          "http://localhost:5112/api/order/get-all-orders",
+          "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/order/get-all-orders",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -80,7 +80,7 @@ const Order = () => {
 
       try {
         const response = await axios.get(
-          "http://localhost:5112/api/staff/get-all-staff", // Get all staff
+          "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/staff/get-all-staff", // Get all staff
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -93,7 +93,7 @@ const Order = () => {
 
         // Now fetch kitchen staff separately
         const kitchenStaffResponse = await axios.get(
-          "http://localhost:5112/api/staff/get-all-kitchen-staff", // Get kitchen staff
+          "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/staff/get-all-kitchen-staff", // Get kitchen staff
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -123,7 +123,7 @@ const Order = () => {
       }
 
       const response = await axios.get(
-        `http://localhost:5112/api/order/get-order-by-id/${orderId}`,
+        `https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/order/get-order-by-id/${orderId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -198,7 +198,7 @@ const Order = () => {
       }
 
       await axios.delete(
-        `http://localhost:5112/api/order/delete-order/${orderId}`,
+        `https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/order/delete-order/${orderId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

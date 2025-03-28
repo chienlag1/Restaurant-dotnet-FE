@@ -56,7 +56,7 @@ const Payment = () => {
           return;
         }
         const response = await axios.get(
-          `http://localhost:5112/api/order/get-order-by-id/${orderId}`,
+          `https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/order/get-order-by-id/${orderId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -92,7 +92,7 @@ const Payment = () => {
           return;
         }
         const response = await axios.get(
-          "http://localhost:5112/api/Promotions/get-all-promotions",
+          "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/Promotions/get-all-promotions",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -163,7 +163,7 @@ const Payment = () => {
       const token = localStorage.getItem("authToken");
       // Gọi API để áp dụng promotion vào order
       await axios.post(
-        "http://localhost:5112/api/Promotions/apply-promotion",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/Promotions/apply-promotion",
         {
           OrderId: parseInt(orderId),
           PromotionId: selectedPromo.promotionId,
@@ -226,7 +226,7 @@ const Payment = () => {
       };
 
       const response = await axios.post(
-        "http://localhost:5112/api/payment/process-payment",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/payment/process-payment",
         paymentData,
         {
           headers: {

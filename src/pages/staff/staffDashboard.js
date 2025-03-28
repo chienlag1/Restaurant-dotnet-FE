@@ -26,7 +26,7 @@ export default function StaffDashboard() {
         }
 
         const response = await axios.get(
-          "http://localhost:5112/api/tables/get-all-table",
+          "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/tables/get-all-table",
           {
             headers: {
               Authorization: `Bearer ${token}`,

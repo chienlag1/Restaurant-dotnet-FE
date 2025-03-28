@@ -26,7 +26,7 @@ const UserManagement = () => {
         return;
       }
       const response = await axios.get(
-        "http://localhost:5112/api/users/search?keyword=@",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/users/search?keyword=@",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -65,7 +65,7 @@ const UserManagement = () => {
       }
       // Thêm khách hàng mới
       await axios.post(
-        "http://localhost:5112/api/customer/create-customer",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/customer/create-customer",
         newUser,
         {
           headers: {

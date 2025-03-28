@@ -38,7 +38,7 @@ export default function StaffManagement() {
     setError(null);
     try {
       const res = await axios.get(
-        "http://localhost:5112/api/staff/get-all-staff",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/staff/get-all-staff",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -74,8 +74,8 @@ export default function StaffManagement() {
       };
 
       const url = editingStaff
-        ? `http://localhost:5112/api/staff/update-staff-by-id/${editingStaff.userId}`
-        : "http://localhost:5112/api/staff/create-staff";
+        ? `https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/staff/update-staff-by-id/${editingStaff.userId}`
+        : "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/staff/create-staff";
 
       await axios({
         method: editingStaff ? "put" : "post",
@@ -112,7 +112,7 @@ export default function StaffManagement() {
     if (window.confirm("Bạn có chắc chắn muốn xóa nhân viên này?")) {
       try {
         await axios.delete(
-          `http://localhost:5112/api/staff/delete-staff-by-id/${id}`,
+          `https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/staff/delete-staff-by-id/${id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }

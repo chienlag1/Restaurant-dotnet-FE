@@ -33,7 +33,7 @@ const PromotionForm = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `http://localhost:5112/api/promotions/get-detail-promotion/${id}`,
+        `https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/promotions/get-detail-promotion/${id}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("authToken")}`,
@@ -78,7 +78,7 @@ const PromotionForm = () => {
     try {
       if (id) {
         await axios.put(
-          `http://localhost:5112/api/promotions/update-promotion/${id}`,
+          `https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/promotions/update-promotion/${id}`,
           formData,
           {
             headers: {
@@ -88,7 +88,7 @@ const PromotionForm = () => {
         );
       } else {
         await axios.post(
-          "http://localhost:5112/api/promotions/create-promotion",
+          "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/promotions/create-promotion",
           formData,
           {
             headers: {

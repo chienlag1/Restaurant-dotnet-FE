@@ -22,7 +22,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const API_URL = "http://localhost:5112/api/order";
+  const API_URL = "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/order";
 
   // Axios instance with token
   const axiosInstance = axios.create({

@@ -42,7 +42,7 @@ const PaymentStatus = () => {
 
         // Lấy danh sách đơn hàng
         const ordersResponse = await axios.get(
-          "http://localhost:5112/api/order/get-all-orders-with-payment-status",
+          "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/order/get-all-orders-with-payment-status",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -62,7 +62,7 @@ const PaymentStatus = () => {
 
         // Lấy danh sách khuyến mãi
         const promotionsResponse = await axios.get(
-          "http://localhost:5112/api/Promotions/get-all-promotions",
+          "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/Promotions/get-all-promotions",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -91,7 +91,7 @@ const PaymentStatus = () => {
       setDetailLoading(true);
       const token = localStorage.getItem("authToken");
       const response = await axios.get(
-        `http://localhost:5112/api/order/get-order-by-id/${orderId}`,
+        `https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/order/get-order-by-id/${orderId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

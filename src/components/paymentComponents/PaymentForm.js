@@ -46,7 +46,7 @@ const PaymentForm = ({ orderId, onPaymentSuccess, onClose, amount }) => {
 
       // 2. Gọi API process-payment (giữ nguyên)
       const processResponse = await fetch(
-        "http://localhost:5112/api/payment/process-payment",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/payment/process-payment",
         {
           method: "POST",
           headers: {
@@ -79,7 +79,7 @@ const PaymentForm = ({ orderId, onPaymentSuccess, onClose, amount }) => {
 
       // 3. Gọi API confirm-payment với xử lý response linh hoạt hơn
       const confirmResponse = await fetch(
-        "http://localhost:5112/api/payment/confirm-payment",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/payment/confirm-payment",
         {
           method: "POST",
           headers: {

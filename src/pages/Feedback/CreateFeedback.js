@@ -31,7 +31,7 @@ const CreateFeedback = () => {
       };
 
       const response = await axios.post(
-        "http://localhost:5112/api/feedback/create-feedback",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/feedback/create-feedback",
         feedbackData,
         {
           headers: {

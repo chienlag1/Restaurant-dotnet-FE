@@ -28,7 +28,7 @@ const MenuList = () => {
       setIsLoading(true);
       try {
         const response = await axios.get(
-          "http://localhost:5112/api/menuitem/get-all-menuitems"
+          "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/menuitem/get-all-menuitems"
         );
         const data = response.data;
 
@@ -82,7 +82,7 @@ const MenuList = () => {
       startDate.setDate(endDate.getDate() - 30);
 
       const response = await axios.get(
-        "http://localhost:5112/api/menuitem/top-selling-dishes-inTimeRange",
+        "https://berestaurantmanagementv2-cgggezezbyf2f6gr.japanwest-01.azurewebsites.net/api/menuitem/top-selling-dishes-inTimeRange",
         {
           params: {
             startDate: startDate.toISOString(),
