@@ -4,73 +4,122 @@ import Pagination from "../pagination";
 
 const MenuList = () => {
   const [menuItems, setMenuItems] = useState([]);
+  const [topSellingItems, setTopSellingItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
+  // Lấy danh sách món ăn cơ bản
   useEffect(() => {
     axios
       .get("http://localhost:5112/api/menuitem/get-all-menuitems")
       .then((response) => {
         const data = response.data;
-
         if (data && Array.isArray(data.$values)) {
           setMenuItems(data.$values);
         } else {
-          console.error("API không trả về mảng hợp lệ:", data);
           setMenuItems([]);
         }
       })
-      .catch((error) => {
-        console.error("Lỗi khi lấy danh sách món ăn:", error);
+      .catch(() => {
         setMenuItems([]);
       });
   }, []);
 
-  const filteredMenu = menuItems
-    .filter(
-      (item) =>
-        item.name && item.name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .filter((item) =>
-      categoryFilter
-        ? item.category.trim().toLowerCase() ===
-          categoryFilter.trim().toLowerCase()
-        : true
-    )
-    .sort((a, b) => {
-      if (sortBy === "name") return a.name.localeCompare(b.name);
-      if (sortBy === "price-asc") return a.price - b.price;
-      if (sortBy === "price-desc") return b.price - a.price;
-      return 0;
-    });
+  // Lấy danh sách best seller khi chọn filter
+  useEffect(() => {
+    if (categoryFilter === "Best seller") {
+      setIsLoading(true);
+      setError(null);
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - 30); // 30 ngày trước
 
-  // Xử lý phân trang
+      axios
+        .get(
+          "http://localhost:5112/api/menuitem/top-selling-dishes-inTimeRange",
+          {
+            params: {
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString(),
+            },
+          }
+        )
+        .then((response) => {
+          setTopSellingItems(response.data.$values || []);
+        })
+        .catch(() => {
+          setError("Không thể tải danh sách món bán chạy.");
+          setTopSellingItems([]);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else {
+      setTopSellingItems([]);
+      setError(null);
+    }
+  }, [categoryFilter]);
+
+  // Lọc và sắp xếp dữ liệu
+  const filteredMenu = (() => {
+    let baseData = menuItems; 
+
+    if (categoryFilter === "Best seller") {
+      baseData = topSellingItems.map((item) => ({
+        ...item,
+        price: item.totalQuantitySold > 0
+          ? item.totalRevenue / item.totalQuantitySold
+          : 0,
+        isAvailable: true,
+      }));
+    }
+
+    return (
+      baseData
+        .filter(
+          (item) =>
+            item.name &&
+            item.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .filter((item) => {
+          if (categoryFilter === "Best seller") return true;
+          return categoryFilter
+            ? item.category.trim().toLowerCase() ===
+                categoryFilter.trim().toLowerCase()
+            : true;
+        })
+        .sort((a, b) => {
+          if (sortBy === "name") return a.name.localeCompare(b.name);
+          if (sortBy === "price-asc") return a.price - b.price;
+          if (sortBy === "price-desc") return b.price - a.price;
+          return 0;
+        })
+    );
+  })();
+
   const totalPages = Math.ceil(filteredMenu.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredMenu.slice(indexOfFirstItem, indexOfLastItem);
 
   const addToCart = (menuItem) => {
-    // Chỉ kiểm tra token thôi
     const token = localStorage.getItem("authToken");
-
     if (!token) {
       alert("Vui lòng đăng nhập trước khi đặt món.");
       return;
     }
 
-    // Kiểm tra bàn
     const selectedTable = JSON.parse(localStorage.getItem("selectedTable"));
-
     if (!selectedTable) {
       alert("Vui lòng chọn bàn trước khi đặt món.");
       return;
     }
 
-    // Tiếp tục logic thêm vào giỏ hàng
     const cart = JSON.parse(localStorage.getItem("cart")) || {};
     const tableCart = cart[selectedTable.tableId] || [];
     const existingItem = tableCart.find(
@@ -85,7 +134,6 @@ const MenuList = () => {
 
     cart[selectedTable.tableId] = tableCart;
     localStorage.setItem("cart", JSON.stringify(cart));
-
     alert(
       `Đã thêm ${menuItem.name} vào giỏ hàng cho bàn ${selectedTable.tableId}.`
     );
@@ -95,7 +143,6 @@ const MenuList = () => {
     <div className="max-w-6xl mx-auto p-4">
       <h2 className="text-2xl font-bold mb-4">Danh sách món ăn</h2>
 
-      {/* Ô tìm kiếm và bộ lọc */}
       <div className="flex gap-4 mb-6">
         <input
           type="text"
@@ -113,6 +160,7 @@ const MenuList = () => {
           <option value="Món chính">Món chính</option>
           <option value="Đồ uống">Đồ uống</option>
           <option value="Tráng miệng">Tráng miệng</option>
+          <option value="Best seller">Best seller</option>
         </select>
         <select
           className="border p-2 rounded"
@@ -126,7 +174,15 @@ const MenuList = () => {
         </select>
       </div>
 
-      {/* Danh sách món ăn */}
+      {isLoading && (
+        <p className="text-center text-gray-500 col-span-3">
+          Đang tải dữ liệu...
+        </p>
+      )}
+      {error && (
+        <p className="text-center text-red-500 col-span-3">{error}</p>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {currentItems.length > 0 ? (
           currentItems.map((item) => (
@@ -170,7 +226,6 @@ const MenuList = () => {
         )}
       </div>
 
-      {/* Sử dụng component Pagination mới */}
       {totalPages > 1 && (
         <Pagination
           totalItems={filteredMenu.length}
